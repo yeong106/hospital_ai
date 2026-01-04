@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hasta Dosyası</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --bg2:#060a12;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.045);
+      --line: rgba(255,255,255,.12);
+      --line2: rgba(255,255,255,.16);
+      --txt:#eaf0ff;
+      --muted: rgba(234,240,255,.70);
+
+      --p1:#7c4dff;
+      --p2:#4f46e5;
+      --g:#22c55e;
+      --y:#f59e0b;
+      --r:#ef4444;
+
+      --rds:18px;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; min-height:100vh;
+      background: radial-gradient(900px 600px at 18% 10%, rgba(124,77,255,.22), transparent 60%),
+                  radial-gradient(900px 600px at 82% 18%, rgba(34,197,94,.16), transparent 60%),
+                  linear-gradient(180deg, var(--bg), var(--bg2));
+      color:var(--txt);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .wrap{
+      max-width: 1180px;
+      margin: 18px auto 40px;
+      padding: 0 16px;
+      display:grid;
+      gap:14px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border:1px solid var(--line);
+      border-radius: var(--rds);
+      background: rgba(255,255,255,.04);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:99px;
+      background: linear-gradient(135deg, var(--p1), var(--p2));
+      box-shadow: 0 0 18px rgba(124,77,255,.55);
+    }
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      transition:.15s transform, .15s background, .15s border-color;
+      display:inline-flex; align-items:center; gap:8px;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: var(--line2); background: rgba(255,255,255,.08); }
+    .btn:active{ transform: translateY(0px); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.045);
+      border-radius: var(--rds);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .h{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .h .title{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      margin:0;
+    }
+    .h .sub{
+      margin-top:4px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      color: rgba(234,240,255,.9);
+      white-space: nowrap;
+    }
+    .pill b{ font-weight:800; }
+
+    .row{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 680px){
+      .row{ grid-template-columns: 1fr; }
+    }
+    .field{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .label{ color:var(--muted); font-size:12px; margin-bottom:4px; }
+    .value{ font-weight:800; }
+
+    .chips{
+      display:flex;
+      flex-wrap: wrap;
+      gap:8px;
+      margin-top: 8px;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: rgba(234,240,255,.9);
+    }
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin: 8px 0 10px;
+    }
+    .inputs{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+
+    input, select{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color:var(--txt);
+      border-radius: 14px;
+      padding: 10px 12px;
+      outline:none;
+      min-width: 220px;
+    }
+    input::placeholder{ color: rgba(234,240,255,.45); }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+    thead th{
+      position: sticky;
+      top: 0;
+      background: rgba(10,14,26,.85);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      color: rgba(234,240,255,.78);
+      text-align:left;
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--line);
+      z-index: 1;
+    }
+    tbody td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      vertical-align: top;
+      font-size: 13px;
+    }
+    tbody tr:hover td{
+      background: rgba(255,255,255,.04);
+    }
+
+    .kpi{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+      margin-top: 10px;
+    }
+    .kpi .k{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .k .n{ font-size: 18px; font-weight: 900; }
+    .k .t{ font-size: 12px; color: var(--muted); margin-top:2px; }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      white-space: nowrap;
+    }
+    .b-g{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .b-y{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+    .b-r{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .b-p{ border-color: rgba(124,77,255,.35); background: rgba(124,77,255,.10); }
+
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .empty{
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 14px;
+      color: var(--muted);
+      text-align:center;
+    }
+
+    .toast{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      background: rgba(10,14,26,.92);
+      border: 1px solid rgba(255,255,255,.18);
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      display:none;
+      gap:10px;
+      align-items:center;
+      max-width: 360px;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show{ display:flex; }
+    .toast .t{ color:rgba(234,240,255,.9); font-size: 13px; }
+  </style>
+</head>
+
+<body>
+  <!-- ✅ Jinja değerini JS içine gömmek yerine data-attribute ile taşıyoruz -->
+  <div id="boot" data-patient-id="{{ patient_id }}" style="display:none;"></div>
+
+  <div class="wrap">
+
+    <div class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Hasta Dosyası</span>
+        <span class="pill mono">#<b id="pid_txt">—</b></span>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="/" title="Ana sayfa">
+          ← Ana Sayfa
+        </a>
+        <button class="btn" id="btnReload" title="Yenile">
+          ⟳ Yenile
+        </button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Patient Card -->
+      <div class="card">
+        <div class="h">
+          <div>
+            <div class="title" id="p_name">Yükleniyor…</div>
+            <div class="sub" id="p_sub">Hasta bilgileri getiriliyor.</div>
+          </div>
+          <div class="pill">
+            Missed: <b id="p_missed">0</b>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <div class="label">Email</div>
+            <div class="value" id="p_email">—</div>
+          </div>
+          <div class="field">
+            <div class="label">Telefon</div>
+            <div class="value" id="p_phone">—</div>
+          </div>
+          <div class="field">
+            <div class="label">TC / National ID</div>
+            <div class="value mono" id="p_nid">—</div>
+          </div>
+          <div class="field">
+            <div class="label">Doğum Yılı</div>
+            <div class="value" id="p_birth">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="label">Kronik Durumlar</div>
+          <div class="chips" id="p_conditions"></div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">
+            <div class="n" id="k_total">0</div>
+            <div class="t">Toplam Visit</div>
+          </div>
+          <div class="k">
+            <div class="n" id="k_scheduled">0</div>
+            <div class="t">SCHEDULED</div>
+          </div>
+          <div class="k">
+            <div class="n" id="k_noshow">0</div>
+            <div class="t">NO_SHOW</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Summary -->
+      <div class="card">
+        <div class="h">
+          <div>
+            <div class="title">Özet</div>
+            <div class="sub">Ziyaretleri hızlıca filtrele ve ara.</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="inputs" style="width:100%;">
+            <input id="q" type="text" placeholder="Şikayet / Slot / ID ara…" style="flex:1; min-width:220px;">
+            <select id="status">
+              <option value="">Tüm durumlar</option>
+              <option value="PENDING">PENDING</option>
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="NO_SHOW">NO_SHOW</option>
+              <option value="DONE">DONE</option>
+              <option value="CANCELED">CANCELED</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="empty" id="summary_box">
+          Ziyaretler yüklenince burada kısa özet görünecek.
+        </div>
+      </div>
+    </div>
+
+    <!-- Visits table -->
+    <div class="card">
+      <div class="h">
+        <div>
+          <div class="title">Ziyaret Geçmişi (Visits)</div>
+          <div class="sub" id="v_sub">—</div>
+        </div>
+        <div class="pill">
+          Gösterilen: <b id="v_shown">0</b> / <b id="v_all">0</b>
+        </div>
+      </div>
+
+      <div style="overflow:auto; border-radius:14px;">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:110px;">Visit ID</th>
+              <th style="min-width:160px;">Tarih</th>
+              <th style="min-width:120px;">Durum</th>
+              <th style="min-width:140px;">Slot</th>
+              <th style="min-width:90px;">Şiddet</th>
+              <th style="min-width:170px;">Şikayet</th>
+              <th style="min-width:120px;">Skor</th>
+              <th style="min-width:240px;">Koşullar</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8" style="color:rgba(234,240,255,.7);">Yükleniyor…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="t" id="toast_txt">—</div>
+  </div>
+
+  <script>
+    // ✅ VS Code JS parser hata vermesin diye Jinja'yı JS içine sokmuyoruz
+    const PATIENT_ID = Number(document.getElementById("boot")?.dataset.patientId || 0);
+
+    const els = {
+      pid: document.getElementById("pid_txt"),
+      reload: document.getElementById("btnReload"),
+
+      p_name: document.getElementById("p_name"),
+      p_sub: document.getElementById("p_sub"),
+      p_email: document.getElementById("p_email"),
+      p_phone: document.getElementById("p_phone"),
+      p_nid: document.getElementById("p_nid"),
+      p_birth: document.getElementById("p_birth"),
+      p_missed: document.getElementById("p_missed"),
+      p_conditions: document.getElementById("p_conditions"),
+
+      k_total: document.getElementById("k_total"),
+      k_scheduled: document.getElementById("k_scheduled"),
+      k_noshow: document.getElementById("k_noshow"),
+
+      q: document.getElementById("q"),
+      status: document.getElementById("status"),
+      summary: document.getElementById("summary_box"),
+
+      v_sub: document.getElementById("v_sub"),
+      v_shown: document.getElementById("v_shown"),
+      v_all: document.getElementById("v_all"),
+      tbody: document.getElementById("tbody"),
+
+      toast: document.getElementById("toast"),
+      toastTxt: document.getElementById("toast_txt"),
+    };
+
+    els.pid.textContent = String(PATIENT_ID);
+
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    function fmtDate(iso){
+      if(!iso) return "-";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString("tr-TR");
+    }
+
+    function toast(msg){
+      els.toastTxt.textContent = msg;
+      els.toast.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(()=>els.toast.classList.remove("show"), 2200);
+    }
+
+    function statusBadge(st){
+      const s = String(st || "").toUpperCase();
+      if(s === "SCHEDULED") return `<span class="badge b-p">SCHEDULED</span>`;
+      if(s === "PENDING")   return `<span class="badge b-y">PENDING</span>`;
+      if(s === "DONE")      return `<span class="badge b-g">DONE</span>`;
+      if(s === "NO_SHOW")   return `<span class="badge b-r">NO_SHOW</span>`;
+      if(s === "CANCELED")  return `<span class="badge">CANCELED</span>`;
+      return `<span class="badge">${esc(s || "-")}</span>`;
+    }
+
+    function conditionsChips(arr){
+      const a = Array.isArray(arr) ? arr : [];
+      if(!a.length) return `<span class="chip">GENEL</span>`;
+      return a.map(x => `<span class="chip">${esc(String(x).toUpperCase())}</span>`).join("");
+    }
+
+    let ALL_VISITS = [];
+
+    function applyFilters(){
+      const q = (els.q.value || "").trim().toLowerCase();
+      const st = (els.status.value || "").trim().toUpperCase();
+
+      let filtered = ALL_VISITS.slice();
+
+      if(st){
+        filtered = filtered.filter(v => String(v.status || "").toUpperCase() === st);
+      }
+
+      if(q){
+        filtered = filtered.filter(v => {
+          const id = String(v.id || "");
+          const complaint = String(v.complaint || "");
+          const slot = String(v.scheduled_slot || "");
+          const sev = String(v.severity ?? "");
+          const score = String(v.score ?? "");
+          const cond = (Array.isArray(v.conditions) ? v.conditions.join(",") : "");
+          return (
+            id.includes(q) ||
+            complaint.toLowerCase().includes(q) ||
+            slot.toLowerCase().includes(q) ||
+            sev.toLowerCase().includes(q) ||
+            score.toLowerCase().includes(q) ||
+            cond.toLowerCase().includes(q)
+          );
+        });
+      }
+
+      renderTable(filtered);
+      renderSummary(filtered);
+    }
+
+    function renderSummary(current){
+      const total = ALL_VISITS.length;
+      const shown = current.length;
+
+      const counts = { PENDING:0, SCHEDULED:0, DONE:0, NO_SHOW:0, CANCELED:0, OTHER:0 };
+      for(const v of ALL_VISITS){
+        const s = String(v.status || "").toUpperCase();
+        if(counts[s] != null) counts[s]++; else counts.OTHER++;
+      }
+
+      els.summary.innerHTML = `
+        <div style="display:grid; gap:8px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span class="pill">Toplam Visit: <b>${total}</b></span>
+            <span class="pill">Gösterilen: <b>${shown}</b></span>
+            <span class="pill">SCHEDULED: <b>${counts.SCHEDULED}</b></span>
+            <span class="pill">PENDING: <b>${counts.PENDING}</b></span>
+            <span class="pill">NO_SHOW: <b>${counts.NO_SHOW}</b></span>
+            <span class="pill">DONE: <b>${counts.DONE}</b></span>
+          </div>
+          <div class="muted" style="font-size:12px;">
+            İpucu: Visit ID üstüne tıkla → kopyalar. (Seviyeye göre hızlı arama da yapabilirsin.)
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTable(list){
+      els.v_all.textContent = String(ALL_VISITS.length);
+      els.v_shown.textContent = String(list.length);
+
+      if(!list.length){
+        els.tbody.innerHTML = `<tr><td colspan="8" style="color:rgba(234,240,255,.7);">Kayıt yok (filtreyi temizle).</td></tr>`;
+        return;
+      }
+
+      els.tbody.innerHTML = list.map(v => {
+        const scoreTxt = (v.score == null) ? "-" : String(v.score);
+        return `
+          <tr>
+            <td class="mono">
+              <a href="#" data-copy="${esc(v.id)}" title="Kopyala" style="text-decoration:underline; text-decoration-color:rgba(234,240,255,.28);">
+                ${esc(v.id)}
+              </a>
+            </td>
+            <td>${esc(fmtDate(v.created_at))}</td>
+            <td>${statusBadge(v.status)}</td>
+            <td class="mono">${esc(v.scheduled_slot || "-")}</td>
+            <td>${esc((v.severity ?? "-"))}</td>
+            <td>${esc(v.complaint || "-")}</td>
+            <td class="mono">${esc(scoreTxt)}</td>
+            <td>${conditionsChips(v.conditions)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function fillPatientCard(p){
+      els.p_name.textContent = p.full_name || `Hasta #${PATIENT_ID}`;
+      els.p_email.textContent = p.email || "—";
+      els.p_phone.textContent = p.phone || "—";
+      els.p_nid.textContent = p.national_id || "—";
+      els.p_birth.textContent = (p.birth_year == null ? "—" : String(p.birth_year));
+      els.p_missed.textContent = String(p.missed_total ?? 0);
+
+      const conds = Array.isArray(p.conditions) ? p.conditions : [];
+      els.p_conditions.innerHTML = conditionsChips(conds);
+
+      const bits = [];
+      if(p.created_at) bits.push("Kayıt: " + fmtDate(p.created_at));
+      if(p.updated_at) bits.push("Güncelleme: " + fmtDate(p.updated_at));
+      els.p_sub.textContent = bits.join(" • ") || "—";
+    }
+
+    function fillKpis(){
+      const total = ALL_VISITS.length;
+      const scheduled = ALL_VISITS.filter(v => String(v.status||"").toUpperCase() === "SCHEDULED").length;
+      const noshow = ALL_VISITS.filter(v => String(v.status||"").toUpperCase() === "NO_SHOW").length;
+      els.k_total.textContent = String(total);
+      els.k_scheduled.textContent = String(scheduled);
+      els.k_noshow.textContent = String(noshow);
+    }
+
+    async function loadFile(){
+      if(!PATIENT_ID){
+        els.v_sub.textContent = "Hasta ID bulunamadı.";
+        els.tbody.innerHTML = `<tr><td colspan="8" style="color:rgba(234,240,255,.7);">Hata: patient_id yok</td></tr>`;
+        return;
+      }
+
+      els.tbody.innerHTML = `<tr><td colspan="8" style="color:rgba(234,240,255,.7);">Yükleniyor…</td></tr>`;
+      els.v_sub.textContent = "Veriler getiriliyor…";
+
+      try{
+        const r = await fetch(`/api/patients/${PATIENT_ID}/file`, { headers: { "Accept": "application/json" } });
+        if(!r.ok){
+          const txt = await r.text();
+          throw new Error("API " + r.status + " " + txt);
+        }
+        const data = await r.json();
+
+        if(!data || !data.ok){
+          throw new Error("Beklenmeyen cevap");
+        }
+
+        fillPatientCard(data.patient || {});
+        ALL_VISITS = Array.isArray(data.visits) ? data.visits : [];
+        fillKpis();
+
+        els.v_sub.textContent = `Toplam ${ALL_VISITS.length} ziyaret listeleniyor.`;
+        applyFilters();
+      }catch(err){
+        els.v_sub.textContent = "Yüklenemedi.";
+        els.tbody.innerHTML = `<tr><td colspan="8" style="color:rgba(234,240,255,.7);">Hata: ${esc(err.message)}</td></tr>`;
+        els.summary.innerHTML = `<div class="empty">Veri alınamadı.</div>`;
+      }
+    }
+
+    // events
+    els.reload.addEventListener("click", loadFile);
+    els.q.addEventListener("input", applyFilters);
+    els.status.addEventListener("change", applyFilters);
+
+    document.addEventListener("click", async (e) => {
+      const a = e.target.closest("[data-copy]");
+      if(!a) return;
+      e.preventDefault();
+      const txt = a.getAttribute("data-copy") || "";
+      try{
+        await navigator.clipboard.writeText(txt);
+        toast("Kopyalandı: " + txt);
+      }catch(_){
+        toast("Kopyalanamadı (tarayıcı izin vermedi).");
+      }
+    });
+
+    loadFile();
+  </script>
+</body>
+</html>
