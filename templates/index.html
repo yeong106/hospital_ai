@@ -1,0 +1,3058 @@
+<!doctype html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Destekli Hastane Randevu Önceliklendirme</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --bg2:#060a12;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.045);
+      --line: rgba(255,255,255,.12);
+      --line2: rgba(255,255,255,.16);
+      --txt:#eaf0ff;
+      --muted: rgba(234,240,255,.70);
+
+      --p1:#7c4dff;
+      --p2:#4f46e5;
+      --g:#22c55e;
+      --y:#f59e0b;
+      --r:#ef4444;
+
+      --rds:18px;
+      --rds2:22px;
+
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --shadow2: 0 12px 40px rgba(0,0,0,.25);
+
+      --glass: linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.03));
+      --glass2: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
+    }
+
+    html[data-theme="light"]{
+      --bg:#f5f7ff;
+      --bg2:#eef2ff;
+      --card: rgba(255,255,255,.90);
+      --card2: rgba(255,255,255,.78);
+      --line: rgba(15,23,42,.12);
+      --line2: rgba(15,23,42,.16);
+      --txt:#0f172a;
+      --muted: rgba(15,23,42,.65);
+
+      --shadow: 0 18px 60px rgba(15,23,42,.10);
+      --shadow2: 0 12px 40px rgba(15,23,42,.08);
+
+      --glass: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
+      --glass2: linear-gradient(180deg, rgba(15,23,42,.05), rgba(15,23,42,.03));
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--txt);
+      padding:22px;
+      background:
+        radial-gradient(1200px 700px at 12% 8%, rgba(124,77,255,.34), transparent 60%),
+        radial-gradient(900px 650px at 88% 18%, rgba(34,197,94,.22), transparent 58%),
+        radial-gradient(1000px 650px at 75% 85%, rgba(245,158,11,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+
+    /* ====== Layout Shell ====== */
+    .shell{
+      max-width: 1220px;
+      margin: 0 auto;
+      display:grid;
+      grid-template-columns: 280px 1fr;
+      gap:16px;
+      min-height: calc(100vh - 44px);
+    }
+
+    /* ====== Sidebar ====== */
+    .side{
+      position: sticky;
+      top: 22px;
+      height: calc(100vh - 44px);
+      border:1px solid var(--line);
+      border-radius: var(--rds2);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .sideInner{ padding:14px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      padding:12px;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.14);
+    }
+    html[data-theme="light"] .brand{ background: rgba(255,255,255,.70); }
+
+    .logo{
+      width:46px; height:46px;
+      border-radius: 16px;
+      display:grid; place-items:center;
+      font-size: 22px;
+      background: radial-gradient(80% 80% at 30% 25%, rgba(124,77,255,.35), rgba(79,70,229,.10));
+      border:1px solid rgba(124,77,255,.35);
+      box-shadow: 0 10px 28px rgba(124,77,255,.18);
+      flex:0 0 auto;
+      overflow:hidden;
+    }
+    .logo img{ width:100%; height:100%; object-fit:cover; display:none; }
+    .btitle{ font-weight: 950; letter-spacing:.2px; }
+    .bsub{ color: var(--muted); font-size: 12px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 170px; }
+
+    .nav{
+      display:grid; gap:10px;
+      margin-top: 6px;
+    }
+    .navBtn{
+      width:100%;
+      text-align:left;
+      padding:12px 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      font-weight: 900;
+      cursor:pointer;
+      display:flex; align-items:center; gap:10px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    html[data-theme="light"] .navBtn{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+    .navBtn:hover{ transform: translateY(-1px); border-color: rgba(124,77,255,.55); }
+    .navBtn.active{
+      border-color: rgba(124,77,255,.60);
+      background: radial-gradient(120% 120% at 20% 10%, rgba(124,77,255,.20), rgba(0,0,0,.12));
+    }
+    html[data-theme="light"] .navBtn.active{
+      background: radial-gradient(120% 120% at 20% 10%, rgba(124,77,255,.15), rgba(255,255,255,.65));
+    }
+
+    .sideTools{
+      margin-top: 6px;
+      display:grid;
+      gap:10px;
+    }
+
+    .sideFoot{
+      margin-top:auto;
+      padding:14px;
+      border-top:1px solid var(--line);
+      background: rgba(0,0,0,.10);
+      display:grid;
+      gap:10px;
+    }
+    html[data-theme="light"] .sideFoot{ background: rgba(255,255,255,.55); }
+
+    .tinyBtn{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      color: var(--txt);
+      font-weight: 900;
+      cursor:pointer;
+      transition: transform .12s ease, border-color .12s ease;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    html[data-theme="light"] .tinyBtn{
+      background: rgba(15,23,42,.05);
+      border:1px solid rgba(15,23,42,.12);
+    }
+    .tinyBtn:hover{ transform: translateY(-1px); border-color: rgba(124,77,255,.45); }
+
+    .collapseBtn{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.14);
+      color: var(--txt);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    html[data-theme="light"] .collapseBtn{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+
+    .shell.collapsed{
+      grid-template-columns: 86px 1fr;
+    }
+    .shell.collapsed .btitle,
+    .shell.collapsed .bsub,
+    .shell.collapsed .navText,
+    .shell.collapsed .sideTools,
+    .shell.collapsed .sideFoot .tinyBtn .tText{
+      display:none;
+    }
+    .shell.collapsed .navBtn{ justify-content:center; }
+    .shell.collapsed .brand{ justify-content:center; }
+    .shell.collapsed .sideInner{ padding:12px; }
+
+    /* ====== Content / Topbar ====== */
+    .content{ min-width:0; display:grid; gap:16px; }
+
+    .topbar{
+      border:1px solid var(--line);
+      border-radius: var(--rds2);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      padding:14px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .titleBlock{ min-width: 240px; }
+    .pageTitle{ font-size: 18px; font-weight: 950; letter-spacing:.2px; }
+    .pageSub{ color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .topActions{
+      display:flex; align-items:center; gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    /* Search */
+    .search{
+      display:flex; align-items:center; gap:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      border-radius: 999px;
+      padding: 10px 12px;
+      min-width: 240px;
+    }
+    html[data-theme="light"] .search{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+    .search input{
+      border:0; outline:none; background:transparent; color: var(--txt);
+      width: 220px;
+    }
+    .search .kbd{
+      font-size: 11px;
+      color: var(--muted);
+      border:1px solid rgba(255,255,255,.14);
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+    html[data-theme="light"] .search .kbd{ border-color: rgba(15,23,42,.12); }
+
+    /* User chip */
+    .userChip{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      max-width: 520px;
+    }
+    html[data-theme="light"] .userChip{
+      border-color: rgba(15,23,42,.12);
+      background: rgba(15,23,42,.04);
+    }
+    .userDot{
+      width:10px;height:10px;border-radius:50%;
+      background: rgba(34,197,94,.85);
+      box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+      flex:0 0 auto;
+    }
+
+    .avatar{
+      width:34px; height:34px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+      flex:0 0 auto;
+      display:grid; place-items:center;
+      font-weight:950;
+      color: rgba(234,240,255,.85);
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+    }
+    html[data-theme="light"] .avatar{
+      border-color: rgba(15,23,42,.12);
+      background: rgba(255,255,255,.70);
+      color: rgba(15,23,42,.85);
+    }
+    .avatar img{ width:100%; height:100%; object-fit:cover; display:none; }
+
+    .userMeta{ display:grid; gap:2px; min-width:0; }
+    .userName{ font-weight: 950; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .userEmail{ color: var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* Buttons */
+    button{
+      border:0; cursor:pointer;
+      padding:12px 14px;
+      border-radius: 16px;
+      font-weight: 900;
+      color: white;
+      background: linear-gradient(135deg, rgba(124,77,255,1), rgba(79,70,229,1));
+      box-shadow: 0 12px 28px rgba(124,77,255,.25);
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+      white-space:nowrap;
+    }
+    button:hover{ transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 14px 32px rgba(124,77,255,.30); }
+    button:active{ transform: translateY(0); filter: brightness(1.0); }
+
+    .secondary{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
+      color: var(--txt);
+    }
+    html[data-theme="light"] .secondary{
+      background: rgba(15,23,42,.05);
+      border:1px solid rgba(15,23,42,.12);
+    }
+
+    /* danger button for modal confirms */
+    .dangerBtn{
+      background: linear-gradient(135deg, rgba(239,68,68,1), rgba(245,158,11,1));
+      box-shadow: 0 12px 28px rgba(239,68,68,.18);
+    }
+    .dangerBtn:hover{
+      box-shadow: 0 14px 32px rgba(239,68,68,.22);
+      filter: brightness(1.04);
+    }
+
+    .iconBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      padding:10px 12px;
+      border-radius: 16px;
+      font-weight: 950;
+      cursor:pointer;
+      box-shadow:none;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    html[data-theme="light"] .iconBtn{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+    .iconBtn:hover{ transform: translateY(-1px); border-color: rgba(124,77,255,.55); }
+    .iconBtn.danger:hover{ border-color: rgba(239,68,68,.6); }
+
+    /* Cards */
+    .card{
+      border:1px solid var(--line);
+      background: var(--card);
+      border-radius: var(--rds2);
+      padding:16px;
+      box-shadow: var(--shadow2);
+    }
+
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    html[data-theme="light"] .pill{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+
+    .ok{ color: var(--g); }
+    .warn{ color: var(--y); }
+    .bad{ color: var(--r); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space:pre-wrap; }
+
+    /* Views */
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    /* Dashboard grid */
+    .dashGrid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .dashGrid{ grid-template-columns: 1fr; }
+    }
+
+    .statsGrid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 980px){
+      .statsGrid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .statsGrid{ grid-template-columns: 1fr; }
+      .search{ min-width: 100%; }
+      .search input{ width: 100%; }
+    }
+
+    .stat{
+      padding:12px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: var(--glass2);
+      position:relative;
+      overflow:hidden;
+      min-height: 86px;
+    }
+    html[data-theme="light"] .stat{ background: rgba(255,255,255,.65); border-color: rgba(15,23,42,.12); }
+
+    .stat::after{
+      content:"";
+      position:absolute;
+      inset:-60px -60px auto auto;
+      width:160px; height:160px;
+      border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(124,77,255,.22), transparent 60%);
+      transform: rotate(10deg);
+      pointer-events:none;
+    }
+    .statLabel{ color: var(--muted); font-size:12px; font-weight:800; }
+    .statValue{ font-size: 22px; font-weight: 950; margin-top: 6px; letter-spacing:.2px; }
+    .statMeta{ color: var(--muted); font-size:12px; margin-top: 6px; }
+
+    /* Mini chart */
+    .miniChart{
+      margin-top:12px;
+      display:grid;
+      gap:10px;
+    }
+    .bars{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:8px;
+      align-items:end;
+      height: 86px;
+    }
+    .bar{
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.20);
+      overflow:hidden;
+      position:relative;
+    }
+    html[data-theme="light"] .bar{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+    .bar > i{
+      display:block;
+      width:100%;
+      height:40%;
+      background: linear-gradient(180deg, rgba(124,77,255,.75), rgba(79,70,229,.55));
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      box-shadow: 0 10px 18px rgba(124,77,255,.18);
+    }
+    .barLabel{
+      color: var(--muted);
+      font-size: 11px;
+      text-align:center;
+      margin-top: 4px;
+    }
+
+    /* Patients grid */
+    .patientsGrid{
+      display:grid;
+      grid-template-columns: minmax(340px, 430px) 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .patientsGrid{ grid-template-columns: 1fr; }
+    }
+
+    label{ display:block; color: var(--muted); font-size:12px; margin: 12px 0 8px; font-weight:800; }
+
+    input, select, textarea{
+      width:100%;
+      padding:12px 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.20);
+      color: var(--txt);
+      outline:none;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+    html[data-theme="light"] input,
+    html[data-theme="light"] select,
+    html[data-theme="light"] textarea{
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(15,23,42,.12);
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(124,77,255,.55);
+      box-shadow: 0 0 0 4px rgba(124,77,255,.12);
+    }
+    input::placeholder{ color: rgba(234,240,255,.35); }
+    html[data-theme="light"] input::placeholder{ color: rgba(15,23,42,.35); }
+
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .sub{ color: var(--muted); font-size: 13px; }
+    .subSmall{ color: var(--muted); font-size: 12px; }
+
+    .formActions{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top: 14px;
+    }
+    .formActions button{ width:100%; }
+    @media (max-width: 420px){
+      .formActions{ grid-template-columns: 1fr; }
+    }
+
+    .editBadge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius: 16px;
+      border:1px solid rgba(124,77,255,.35);
+      background: rgba(124,77,255,.12);
+      color: var(--txt);
+      font-size: 12px;
+      margin-top: 10px;
+      font-weight: 900;
+    }
+
+    /* Slot panel / filters */
+    .slotPanel{
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+      border-radius: 18px;
+      padding: 12px;
+    }
+    html[data-theme="light"] .slotPanel{ background: rgba(255,255,255,.55); border-color: rgba(15,23,42,.12); }
+    .slotGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 980px){
+      .slotGrid{ grid-template-columns: 1fr; }
+    }
+    .slotHint{ margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    .filters{
+      margin-top: 12px;
+      display:grid;
+      grid-template-columns: 1.2fr .7fr 1fr;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 980px){
+      .filters{ grid-template-columns: 1fr; }
+    }
+    .miniLabel{ display:block; color: var(--muted); font-size:12px; margin: 0 0 6px; font-weight:900; }
+    .checkRow{
+      display:flex; gap:10px; align-items:center;
+      padding: 12px 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      user-select:none;
+    }
+    html[data-theme="light"] .checkRow{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+    .checkRow input{ width:auto; transform: scale(1.12); }
+
+    /* Table */
+    .tableWrap{ margin-top: 12px; overflow:auto; border-radius: 18px; border: 1px solid rgba(255,255,255,.10); }
+    html[data-theme="light"] .tableWrap{ border-color: rgba(15,23,42,.12); }
+
+    table{ width:100%; border-collapse:collapse; min-width: 980px; }
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(10,15,28,.78);
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] thead th{
+      background: rgba(255,255,255,.92);
+    }
+    th, td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      text-align:left;
+      font-size:13px;
+      vertical-align:top;
+    }
+    html[data-theme="light"] th,
+    html[data-theme="light"] td{
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+    th{ color: var(--muted); font-weight: 900; white-space:nowrap; }
+    tbody tr:hover{
+      background: rgba(124,77,255,.08);
+    }
+    html[data-theme="light"] tbody tr:hover{
+      background: rgba(124,77,255,.08);
+    }
+
+    /* Results */
+    .resultsGrid{
+      margin-top: 12px;
+      display:grid;
+      gap:12px;
+    }
+    .resultCard{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    html[data-theme="light"] .resultCard{ background: rgba(255,255,255,.55); border-color: rgba(15,23,42,.12); }
+    .resultHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .resultName{ font-weight: 950; }
+    .resultMetaRow{
+      margin-top: 8px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .mailBox{
+      margin-top:10px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      position:relative;
+    }
+    html[data-theme="light"] .mailBox{ background: rgba(255,255,255,.72); border-color: rgba(15,23,42,.12); }
+    .copyBtn{
+      position:absolute;
+      top:10px;
+      right:10px;
+      padding:8px 10px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      font-weight: 950;
+      cursor:pointer;
+    }
+    html[data-theme="light"] .copyBtn{ background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.12); }
+
+    /* Toast */
+    #toastHost{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      gap: 10px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: auto;
+      min-width: 260px;
+      max-width: 380px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(10, 15, 28, .78);
+      backdrop-filter: blur(10px);
+      color: var(--txt);
+      border-radius: 18px;
+      padding: 12px 12px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.45);
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all .18s ease;
+    }
+    html[data-theme="light"] .toast{
+      background: rgba(255,255,255,.92);
+      border-color: rgba(15,23,42,.12);
+      box-shadow: 0 18px 55px rgba(15,23,42,.12);
+    }
+    .toast.show{ transform: translateY(0); opacity: 1; }
+    .toast .trow{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .toast .tmeta{ font-size:12px; color: var(--muted); margin-top:4px; }
+    .toast .x{ border:0; background: transparent; color: var(--muted); font-weight:950; cursor:pointer; padding:0 4px; }
+    .toast.ok{ border-color: rgba(34,197,94,.35); }
+    .toast.warn{ border-color: rgba(245,158,11,.35); }
+    .toast.bad{ border-color: rgba(239,68,68,.35); }
+
+    /* Modal */
+    .modalMask{
+      position: fixed;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 9998;
+      padding: 18px;
+    }
+    .modalMask.show{ display:flex; }
+    .modal{
+      width: min(520px, 100%);
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(10, 15, 28, .86);
+      backdrop-filter: blur(12px);
+      border-radius: 22px;
+      box-shadow: 0 26px 80px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    html[data-theme="light"] .modal{
+      background: rgba(255,255,255,.94);
+      border-color: rgba(15,23,42,.12);
+      box-shadow: 0 26px 80px rgba(15,23,42,.18);
+    }
+    .modalHead{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    html[data-theme="light"] .modalHead{ border-bottom-color: rgba(15,23,42,.10); }
+    .modalTitle{ font-weight: 950; }
+    .modalBody{ padding: 14px 16px; color: var(--muted); }
+    .modalActions{
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+    }
+    html[data-theme="light"] .modalActions{ border-top-color: rgba(15,23,42,.10); }
+
+    /* Settings helpers */
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 980px){ .grid2{ grid-template-columns: 1fr; } }
+
+    .weightsGrid{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 980px){ .weightsGrid{ grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px){ .weightsGrid{ grid-template-columns: 1fr; } }
+
+    .wItem{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+      border-radius: 16px;
+      padding: 10px;
+    }
+    html[data-theme="light"] .wItem{
+      background: rgba(255,255,255,.55);
+      border-color: rgba(15,23,42,.12);
+    }
+    .wTop{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .wName{ font-weight: 950; font-size: 13px; }
+    .wKey{ color: var(--muted); font-size: 12px; }
+
+    /* Avatar settings */
+    .avaRow{
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+      border-radius: 18px;
+      padding: 12px;
+    }
+    html[data-theme="light"] .avaRow{
+      background: rgba(255,255,255,.55);
+      border-color: rgba(15,23,42,.12);
+    }
+    .avaBig{
+      width:56px; height:56px; border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+      display:grid; place-items:center;
+      font-weight:950;
+    }
+    html[data-theme="light"] .avaBig{
+      border-color: rgba(15,23,42,.12);
+      background: rgba(255,255,255,.75);
+    }
+    .avaBig img{ width:100%; height:100%; object-fit:cover; display:none; }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      body{ padding: 14px; }
+      .shell{ grid-template-columns: 1fr; min-height:auto; }
+      .side{ position:relative; top:auto; height:auto; }
+      .shell.collapsed{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell" id="shell">
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="sideInner">
+        <div class="brand">
+          <div class="logo" title="Hospital AI">
+            <img id="sideAvatarImg" alt="avatar" />
+            <span id="sideAvatarFallback">🏥</span>
+          </div>
+          <div style="min-width:0">
+            <div class="btitle">Hospital AI</div>
+            <div class="bsub" id="sideUserMini">—</div>
+          </div>
+        </div>
+
+        <button class="collapseBtn" onclick="toggleSidebar()">⇆ <span class="navText">Menüyü Daralt</span></button>
+
+        <nav class="nav" aria-label="Ana menü">
+          <button class="navBtn active" data-view="dashboard" onclick="showView('dashboard')">
+            <span>📊</span> <span class="navText">Dashboard</span>
+          </button>
+          <button class="navBtn" data-view="patients" onclick="showView('patients')">
+            <span>👥</span> <span class="navText">Hastalar</span>
+          </button>
+          <button class="navBtn" data-view="settings" onclick="showView('settings')">
+            <span>⚙️</span> <span class="navText">Ayarlar</span>
+          </button>
+        </nav>
+
+        <div class="sideTools">
+          <button class="tinyBtn" onclick="loadDemo()">
+            <span class="tText">Demo Veriyi Yükle</span><span>⤓</span>
+          </button>
+          <button class="tinyBtn" onclick="showView('patients')">
+            <span class="tText">Hastaları Yönet</span><span>→</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sideFoot">
+        <button class="tinyBtn" onclick="toggleTheme()">
+          <span class="tText">Tema</span><span id="sideThemeIcon">🌙</span>
+        </button>
+        <button class="tinyBtn" onclick="logout()">
+          <span class="tText">Çıkış Yap</span><span>⎋</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <header class="topbar">
+        <div class="titleBlock">
+          <div class="pageTitle" id="pageTitle">Dashboard</div>
+          <div class="pageSub">
+            Yaş + hastalık geçmişi + gelmeme durumuna göre sıra ve randevu slotu atar (mail içeriği üretir).
+          </div>
+        </div>
+
+        <div class="topActions">
+          <div class="search" title="Ara (Dashboard/Hastalar)">
+            <span style="opacity:.9">🔎</span>
+            <input id="globalSearch" placeholder="Ara: isim / email / @gmail ..." oninput="onGlobalSearch()" />
+            <span class="kbd">Ctrl K</span>
+          </div>
+
+          <div id="userChip" class="userChip" style="display:none">
+            <div class="userDot" title="Online"></div>
+
+            <div class="avatar" title="Profil foto">
+              <img id="topAvatarImg" alt="avatar" />
+              <span id="topAvatarFallback">AI</span>
+            </div>
+
+            <div class="userMeta">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                <div class="userName" id="userName">Kullanıcı</div>
+                <span class="pill" id="userTitlePill" style="display:none">Ünvan</span>
+              </div>
+              <div class="userEmail" id="userEmail">email</div>
+            </div>
+          </div>
+
+          <button class="secondary" id="themeBtn" onclick="toggleTheme()" title="Tema değiştir">🌙 Dark</button>
+          <button class="iconBtn danger" onclick="logout()" title="Çıkış Yap">⎋</button>
+        </div>
+      </header>
+
+      <!-- VIEW: Dashboard -->
+      <section id="view-dashboard" class="view active">
+        <div class="dashGrid">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950">Genel Durum</div>
+                <div class="sub">Sistem özeti + hızlı aksiyonlar.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="loadDemo()">Demo Veriyi Yükle</button>
+                <button onclick="showView('patients')">Hastaları Yönet</button>
+                <button class="secondary" onclick="exportPatientsCsv()">CSV: Hastalar</button>
+                <button class="secondary" onclick="exportResultsCsv()">CSV: Sonuçlar</button>
+              </div>
+            </div>
+
+            <div class="statsGrid" id="statsGrid"></div>
+
+            <div class="miniChart">
+              <div class="subSmall" style="font-weight:900">Skor Dağılımı (preview / son plan)</div>
+              <div class="bars" id="scoreBars"></div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px" id="scoreBarLabels"></div>
+            </div>
+
+            <div class="sub" style="margin-top:12px">
+              İpucu: Demo/hasta ekle → “Hastalar” ekranından <b>Önceliklendirme</b> çalıştır.
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:950;margin-bottom:8px">Son Plan (Özet)</div>
+            <div class="sub" id="dashLastPlan">Henüz plan yok.</div>
+
+            <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+              <div style="font-weight:950;margin-bottom:6px">Hızlı Kontroller</div>
+              <div class="subSmall">Slot tarihi boşsa plan çalışmaz. Missed yüksekse “manual confirm” isteyebilir.</div>
+              <div style="display:grid;gap:10px;margin-top:10px">
+                <button class="secondary" onclick="jumpToSlotSettings()">Slot Ayarlarına Git</button>
+                <button class="secondary" onclick="jumpToPatients()">Hasta Listesine Git</button>
+                <button class="secondary" onclick="showView('settings')">Skor/AI Ayarlarına Git</button>
+                <button onclick="schedule()">Önceliklendirme & Randevu Ata</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: Patients -->
+      <section id="view-patients" class="view">
+        <div class="patientsGrid">
+          <!-- Form -->
+          <div class="card">
+            <div style="font-weight:950;margin-bottom:6px">Hasta Formu</div>
+            <div class="sub">Yeni hasta ekle veya var olanı düzenle.</div>
+
+            <div id="editInfo" style="display:none" class="editBadge">✏️ Düzenleme modu: <span id="editName"></span></div>
+
+            <label>Ad Soyad</label>
+            <input id="name" placeholder="Örn: Ayşe Yılmaz" />
+
+            <label>E-posta</label>
+            <input id="email" placeholder="Örn: ayse@mail.com" />
+
+            <div class="row">
+              <div>
+                <label>Yaş</label>
+                <input id="age" type="number" min="0" max="120" value="45" />
+              </div>
+              <div>
+                <label>Gelmediği randevu sayısı (missed)</label>
+                <input id="missed" type="number" min="0" max="50" value="0" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Severity (0–10)</label>
+                <input id="severity" type="number" min="0" max="10" value="5" />
+              </div>
+              <div>
+                <label>Hastalık / Durum</label>
+                <select id="conditions" multiple size="7">
+                  <option value="acil">Acil</option>
+                  <option value="kalp">Kalp</option>
+                  <option value="kanser">Kanser</option>
+                  <option value="diyabet">Diyabet</option>
+                  <option value="hipertansiyon">Hipertansiyon</option>
+                  <option value="astim">Astım</option>
+                  <option value="gebelik">Gebelik</option>
+                  <option value="psikiyatri">Psikiyatri</option>
+                  <option value="genel" selected>Genel</option>
+                </select>
+                <div class="subSmall" style="margin-top:8px">CTRL ile çoklu seçim yapabilirsin.</div>
+              </div>
+            </div>
+
+            <div class="formActions">
+              <button id="primaryBtn" onclick="submitForm()">Ekle</button>
+              <button id="cancelEditBtn" class="secondary" style="display:none" onclick="cancelEdit()">İptal</button>
+
+              <button class="secondary" onclick="loadDemo()">Demo Yükle</button>
+              <button class="secondary" onclick="clearAll()">Temizle</button>
+            </div>
+          </div>
+
+          <!-- List + Schedule -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Hasta Listesi</div>
+                <div class="sub">Slot ayarlarını yap, sonra planla. (Filtreler sadece görünümü daraltır.)</div>
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="exportPatientsCsv()">CSV: Hastalar</button>
+                <button class="secondary" onclick="exportResultsCsv()">CSV: Sonuçlar</button>
+                <button class="secondary" onclick="showView('settings')">AI/Skor Ayarları</button>
+                <button onclick="schedule()">Önceliklendirme & Randevu Ata</button>
+              </div>
+            </div>
+
+            <div class="slotPanel" id="slotPanel">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+                <div style="font-weight:950;margin-bottom:8px">Slot Ayarları</div>
+                <button class="secondary" onclick="showView('settings')">Ayarlar’dan yönet</button>
+              </div>
+              <div class="slotGrid">
+                <div>
+                  <span class="miniLabel">Başlangıç Tarihi</span>
+                  <input id="slotDate" type="date" onchange="saveSlotSettings(); syncSlotToSettingsUI();" />
+                </div>
+                <div>
+                  <span class="miniLabel">Başlangıç Saati</span>
+                  <input id="slotTime" type="time" value="09:00" onchange="saveSlotSettings(); syncSlotToSettingsUI();" />
+                </div>
+                <div>
+                  <span class="miniLabel">Slot Süresi (dk)</span>
+                  <input id="slotDuration" type="number" min="5" max="240" value="20" oninput="saveSlotSettings(); syncSlotToSettingsUI();" />
+                </div>
+                <div>
+                  <span class="miniLabel">Slot Sayısı</span>
+                  <input id="slotCount" type="number" min="1" max="200" value="12" oninput="saveSlotSettings(); syncSlotToSettingsUI();" />
+                </div>
+              </div>
+              <div class="slotHint">Örn: 2026-01-03 09:00 + 20dk, 12 slot → 09:00–13:00 arası plan.</div>
+            </div>
+
+            <div class="filters">
+              <div>
+                <span class="miniLabel">Ara (Ad / Email)</span>
+                <input id="q" placeholder="ör: ayşe, @gmail, yılmaz..." oninput="onFiltersChanged()" />
+              </div>
+
+              <div>
+                <span class="miniLabel">Min Skor</span>
+                <input id="minScore" type="number" value="0" step="1" oninput="onFiltersChanged()" />
+              </div>
+
+              <div style="display:grid;gap:10px">
+                <div class="checkRow">
+                  <input id="onlyBadMissed" type="checkbox" onchange="onFiltersChanged()" />
+                  <div>
+                    <div style="font-weight:950">Sadece missed ≥ 2</div>
+                    <div class="subSmall" style="margin:0">çok gelmeme uyarılı hastalar</div>
+                  </div>
+                </div>
+
+                <button class="tinyBtn" onclick="resetFilters()">
+                  <span class="tText">Filtreleri Sıfırla</span><span>↺</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="tableWrap">
+              <table id="patientsTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Ad</th>
+                    <th>Yaş</th>
+                    <th>Severity</th>
+                    <th>Missed</th>
+                    <th>Durum</th>
+                    <th>Skor (preview)</th>
+                    <th>Koşullar</th>
+                    <th>Email</th>
+                    <th>Dosya</th>
+                    <th>Düzenle</th>
+                    <th>Sil</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                <div>
+                  <div style="font-weight:950;margin-bottom:6px">Sonuçlar</div>
+                  <div class="sub">Skor, atanan slot ve mail içeriği burada görünür.</div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                  <button class="secondary" onclick="scrollToResults()">Sonuçlara İn</button>
+                  <button class="secondary" onclick="clearResults()">Sonuçları Temizle</button>
+                </div>
+              </div>
+              <div id="results" class="resultsGrid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: Settings -->
+      <section id="view-settings" class="view">
+        <div class="card">
+          <div style="font-weight:950;margin-bottom:8px">Ayarlar</div>
+          <div class="sub">Tema, sidebar, slot varsayılanları, profil ve AI skor modeli.</div>
+
+          <!-- Top quick cards -->
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px">
+            <div class="stat">
+              <div class="statLabel">Tema</div>
+              <div class="statValue" id="setThemeName">Dark</div>
+              <div class="statMeta">Görünümü tek tuşla değiştir.</div>
+              <div style="margin-top:10px">
+                <button class="secondary" onclick="toggleTheme()">Tema Değiştir</button>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="statLabel">Sidebar</div>
+              <div class="statValue" id="setSidebarName">Geniş</div>
+              <div class="statMeta">Daraltıp daha fazla alan aç.</div>
+              <div style="margin-top:10px">
+                <button class="secondary" onclick="toggleSidebar()">Sidebar Toggle</button>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="statLabel">Oturum</div>
+              <div class="statValue">Çıkış</div>
+              <div class="statMeta">Hesabından güvenle çık.</div>
+              <div style="margin-top:10px">
+                <button class="iconBtn danger" onclick="logout()">⎋ Çıkış Yap</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile (Settings) -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Profil</div>
+                <div class="subSmall">Kullanıcı adını ve Gmail/E-posta bilgisini güncelle.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="resetProfileEdits()">Sıfırla</button>
+                <button onclick="saveProfileEdits()">Kaydet</button>
+              </div>
+            </div>
+
+            <div class="grid2" style="margin-top:10px">
+              <div>
+                <span class="miniLabel">Ad Soyad</span>
+                <input id="profileNameSet" placeholder="Örn: Cenk Ali" />
+              </div>
+
+              <div>
+                <span class="miniLabel">Gmail / E-posta</span>
+                <input id="profileEmailSet" placeholder="ornek@gmail.com" />
+                <div class="subSmall" style="margin-top:6px">
+                  Bu bilgi topbar ve sidebar’da görünür.
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="secondary" onclick="clearProfileOverride()">Sunucu verisine dön (lokali temizle)</button>
+            </div>
+          </div>
+
+          <!-- Avatar (Settings) -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Profil Fotoğrafı (Avatar)</div>
+                <div class="subSmall">Endpoint varsa sunucuya dener, yoksa lokal kaydeder (MVP).</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="resetAvatarEdits()">Sıfırla</button>
+                <button onclick="saveAvatarEdits()">Kaydet</button>
+              </div>
+            </div>
+
+            <div class="avaRow" style="margin-top:10px">
+              <div class="avaBig">
+                <img id="avatarPreviewImg" alt="avatar preview" />
+                <span id="avatarPreviewFallback">AI</span>
+              </div>
+
+              <div style="flex:1;min-width:220px">
+                <span class="miniLabel">Foto seç (jpg/png)</span>
+                <input id="avatarFile" type="file" accept="image/*" />
+                <div class="subSmall" style="margin-top:6px">
+                  Not: Lokal kayıtta (base64) çok büyük foto seçersen tarayıcı depolaması şişer.
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="clearAvatarOverride()">Sunucu verisine dön (lokali temizle)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password change (Settings) -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Şifre Değiştir</div>
+                <div class="subSmall">Endpoint varsa değiştirir. Yoksa “demo” uyarısı verir.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button onclick="changePassword()">Şifreyi Güncelle</button>
+              </div>
+            </div>
+
+            <div class="grid2" style="margin-top:10px">
+              <div>
+                <span class="miniLabel">Mevcut Şifre</span>
+                <input id="pwOld" type="password" placeholder="••••••••" />
+              </div>
+
+              <div>
+                <span class="miniLabel">Yeni Şifre</span>
+                <input id="pwNew" type="password" placeholder="en az 8 karakter önerilir" />
+                <div class="subSmall" style="margin-top:6px">İstersen backend’de kural koyarsın (policy).</div>
+              </div>
+
+              <div>
+                <span class="miniLabel">Yeni Şifre (Tekrar)</span>
+                <input id="pwNew2" type="password" placeholder="••••••••" />
+              </div>
+
+              <div>
+                <span class="miniLabel">Güvenlik</span>
+                <div class="subSmall">Bu kart, backend hazır olana kadar “kırılmaz” şekilde tasarlandı.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slot defaults (Settings) -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Slot Varsayılanları</div>
+                <div class="subSmall">Buradan değiştirince “Hastalar” ekranındaki slot paneliyle senkron gider.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="syncSlotFromPatientsUI(); toast('Senkron', 'Hasta ekranından ayarları çekti.', 'ok', 1800)">Hasta ekranından çek</button>
+                <button onclick="applySlotFromSettingsUI()">Kaydet & Uygula</button>
+              </div>
+            </div>
+
+            <div class="slotPanel" style="margin-top:10px">
+              <div class="slotGrid">
+                <div>
+                  <span class="miniLabel">Başlangıç Tarihi</span>
+                  <input id="slotDateSet" type="date" />
+                </div>
+                <div>
+                  <span class="miniLabel">Başlangıç Saati</span>
+                  <input id="slotTimeSet" type="time" value="09:00" />
+                </div>
+                <div>
+                  <span class="miniLabel">Slot Süresi (dk)</span>
+                  <input id="slotDurationSet" type="number" min="5" max="240" value="20" />
+                </div>
+                <div>
+                  <span class="miniLabel">Slot Sayısı</span>
+                  <input id="slotCountSet" type="number" min="1" max="200" value="12" />
+                </div>
+              </div>
+              <div class="slotHint">Not: Slot tarihi boşsa plan çalışmaz. (Kaydet & Uygula yapınca otomatik kaydedilir.)</div>
+            </div>
+          </div>
+
+          <!-- Weights / Score model -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+              <div>
+                <div style="font-weight:950;margin-bottom:6px">Skor Modeli (AI Ağırlıkları)</div>
+                <div class="subSmall">Skoru canlı etkiler. Kaydedilir (localStorage). Aşırı uç değerler üretirsen hastalar “uçabilir”.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="secondary" onclick="resetWeights()">Varsayılanlara dön</button>
+                <button onclick="saveWeightsFromUI()">Kaydet</button>
+              </div>
+            </div>
+
+            <div class="grid2" style="margin-top:10px">
+              <div>
+                <span class="miniLabel">Yaş katsayısı (age_factor)</span>
+                <input id="w_ageFactor" type="number" step="0.01" />
+                <div class="subSmall" style="margin-top:6px">Yaş katkısı: min(yaş, max_age) * age_factor</div>
+              </div>
+
+              <div>
+                <span class="miniLabel">Max yaş sınırı (max_age)</span>
+                <input id="w_maxAge" type="number" step="1" />
+                <div class="subSmall" style="margin-top:6px">Yaş etkisini plafona sokar.</div>
+              </div>
+
+              <div>
+                <span class="miniLabel">Severity katsayısı (severity_factor)</span>
+                <input id="w_sevFactor" type="number" step="0.1" />
+                <div class="subSmall" style="margin-top:6px">Severity katkısı: severity * severity_factor</div>
+              </div>
+
+              <div>
+                <span class="miniLabel">Missed ceza katsayısı (missed_penalty_factor)</span>
+                <input id="w_missedPenalty" type="number" step="0.1" />
+                <div class="subSmall" style="margin-top:6px">Ceza: missed * missed_penalty_factor</div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px; border-top:1px solid var(--line); padding-top:14px">
+              <div style="font-weight:950;margin-bottom:6px">Condition Ağırlıkları</div>
+              <div class="subSmall">Aşağıdaki değerler “condScore” kısmına eklenir. (Toplam = koşulların ağırlık toplamı)</div>
+
+              <div id="condWeightsGrid" class="weightsGrid"></div>
+
+              <div class="subSmall" style="margin-top:10px">
+                Formül: <span class="mono">score = condScore + min(age,max_age)*age_factor + severity*severity_factor - missed*missed_penalty_factor</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced -->
+          <div class="card" style="margin-top:12px">
+            <div style="font-weight:950;margin-bottom:6px">Gelişmiş</div>
+            <div class="subSmall">
+              Tarayıcı depolaması: hasta listesi, slot ayarları, son plan, tema ve skor modeli otomatik kaydedilir.
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button class="secondary" onclick="wipeLocal()">LocalStorage Sıfırla</button>
+              <button class="secondary" onclick="toast('Kısayol','Ctrl+K global arama', 'ok', 2200)">Kısayollar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Modal -->
+  <div id="modalMask" class="modalMask" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle" id="modalTitle">Başlık</div>
+        <button class="iconBtn" onclick="closeModal()" title="Kapat">✕</button>
+      </div>
+      <div class="modalBody" id="modalBody">İçerik</div>
+      <div class="modalActions" id="modalActions"></div>
+    </div>
+  </div>
+
+<script>
+  let patients = [];
+
+  // ---- Default model (will be overridable from Settings) ----
+  const DEFAULT_MODEL = {
+    age_factor: 0.25,
+    severity_factor: 6,
+    missed_penalty_factor: 12,
+    max_age: 90,
+    condition_weights: {
+      acil: 50, kalp: 35, diyabet: 18, hipertansiyon: 14, astim: 12,
+      kanser: 45, gebelik: 20, psikiyatri: 10, genel: 5
+    }
+  };
+
+  let MODEL = structuredClone(DEFAULT_MODEL);
+
+  const LS_KEY = "hospital_ai_patients_v2";
+  const LS_SLOT_KEY = "hospital_ai_slots_v2";
+  const LS_LAST_RESULTS_KEY = "hospital_ai_last_results_v2";
+  const LS_THEME_KEY = "hospital_ai_theme_v2";
+  const LS_VIEW_KEY = "hospital_ai_view_v2";
+  const LS_SIDEBAR_KEY = "hospital_ai_sidebar_v2";
+  const LS_MODEL_KEY = "hospital_ai_model_v1";
+
+  // Profile/Avatar local overrides
+  const LS_USER_OVERRIDE_KEY = "hospital_ai_user_override_v1";
+  const LS_AVATAR_OVERRIDE_KEY = "hospital_ai_avatar_override_v1";
+
+  let AUTH_USER = { name: "", email: "", avatar: "" };
+
+  let editIndex = null;
+  let lastSchedule = null; // { slot_settings_used, results }
+  let globalQuery = "";
+
+  // expose for inline onclick (optional)
+  window.removePatient = removePatient;
+  window.editPatient = editPatient;
+  window.onFiltersChanged = onFiltersChanged;
+  window.resetFilters = resetFilters;
+  window.saveSlotSettings = saveSlotSettings;
+  window.exportPatientsCsv = exportPatientsCsv;
+  window.exportResultsCsv = exportResultsCsv;
+  window.showView = showView;
+  window.toggleTheme = toggleTheme;
+  window.logout = logout;
+  window.loadDemo = loadDemo;
+  window.clearAll = clearAll;
+  window.submitForm = submitForm;
+  window.cancelEdit = cancelEdit;
+  window.schedule = schedule;
+  window.toggleSidebar = toggleSidebar;
+  window.scrollToResults = scrollToResults;
+  window.clearResults = clearResults;
+  window.jumpToSlotSettings = jumpToSlotSettings;
+  window.jumpToPatients = jumpToPatients;
+  window.wipeLocal = wipeLocal;
+
+  // settings extras
+  window.syncSlotToSettingsUI = syncSlotToSettingsUI;
+  window.syncSlotFromPatientsUI = syncSlotFromPatientsUI;
+  window.applySlotFromSettingsUI = applySlotFromSettingsUI;
+  window.saveWeightsFromUI = saveWeightsFromUI;
+  window.resetWeights = resetWeights;
+
+  // profile extras
+  window.saveProfileEdits = saveProfileEdits;
+  window.resetProfileEdits = resetProfileEdits;
+  window.clearProfileOverride = clearProfileOverride;
+
+  // avatar extras
+  window.saveAvatarEdits = saveAvatarEdits;
+  window.resetAvatarEdits = resetAvatarEdits;
+  window.clearAvatarOverride = clearAvatarOverride;
+
+  // password
+  window.changePassword = changePassword;
+
+  /* ---------- Utils ---------- */
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function clamp(n, a, b){
+    n = Number(n);
+    if(!isFinite(n)) return a;
+    return Math.max(a, Math.min(b, n));
+  }
+
+  function clampFloat(n, a, b, def){
+    n = Number(n);
+    if(!isFinite(n)) return def;
+    return Math.max(a, Math.min(b, n));
+  }
+
+  function toast(title, meta, type="ok", ttl=2200){
+    const host = document.getElementById('toastHost');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `
+      <div class="trow">
+        <div>
+          <div style="font-weight:950">${escapeHtml(title)}</div>
+          ${meta ? `<div class="tmeta">${escapeHtml(meta)}</div>` : ``}
+        </div>
+        <button class="x" title="Kapat">×</button>
+      </div>
+    `;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    const kill = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 180); };
+    el.querySelector('.x').addEventListener('click', kill);
+    setTimeout(kill, ttl);
+  }
+
+  function initialsFromName(name){
+    const s = String(name || "").trim();
+    if(!s) return "AI";
+    const parts = s.split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "A";
+    const b = (parts.length > 1 ? parts[parts.length-1]?.[0] : "") || "";
+    return (a + b).toUpperCase();
+  }
+
+  /* ====== Patient ID + File ====== */
+  function makeId(){
+    try{
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    }catch(e){}
+    return "p_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function openPatientFile(pid){
+    pid = String(pid || "").trim();
+    if(!pid){
+      toast("ID yok", "Bu hasta için id bulunamadı.", "warn", 2200);
+      return;
+    }
+    // Hasta dosyası sayfası route’u (Flask’te karşılayacaksın)
+    window.location.href = `/patients/${encodeURIComponent(pid)}/file`;
+  }
+  window.openPatientFile = openPatientFile;
+
+  // Satır tıklayınca dosyaya git (butonlara basınca gitmesin)
+  document.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr.rowClick");
+    if(!tr) return;
+
+    // Bir butona tıklandıysa (📁/✏️/🗑) satır click çalışmasın
+    if(e.target.closest("button")) return;
+
+    const pid = tr.dataset.pid;
+    openPatientFile(pid);
+  });
+
+  /* ---------- Modal ---------- */
+  function openModal({ title, body, actions=[] }){
+    const mask = document.getElementById("modalMask");
+    const t = document.getElementById("modalTitle");
+    const b = document.getElementById("modalBody");
+    const a = document.getElementById("modalActions");
+
+    t.textContent = title || "";
+    b.innerHTML = body || "";
+    a.innerHTML = "";
+
+    actions.forEach(act => {
+      const btn = document.createElement("button");
+      btn.textContent = act.label || "OK";
+      btn.className = act.className || "";
+      btn.onclick = () => { try{ act.onClick && act.onClick(); }catch(e){} };
+      a.appendChild(btn);
+    });
+
+    mask.classList.add("show");
+    mask.setAttribute("aria-hidden","false");
+  }
+
+  function closeModal(){
+    const mask = document.getElementById("modalMask");
+    mask.classList.remove("show");
+    mask.setAttribute("aria-hidden","true");
+  }
+
+  function confirmModal(title, body, okText="Evet", cancelText="Vazgeç", danger=false){
+    return new Promise(resolve => {
+      openModal({
+        title,
+        body,
+        actions: [
+          { label: cancelText, className: "secondary", onClick: () => { closeModal(); resolve(false); } },
+          { label: okText, className: danger ? "dangerBtn" : "", onClick: () => { closeModal(); resolve(true); } }
+        ]
+      });
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    const mask = document.getElementById("modalMask");
+    if(!mask.classList.contains("show")) return;
+    if(e.target === mask) closeModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"){
+      e.preventDefault();
+      document.getElementById("globalSearch")?.focus();
+    }
+    if(e.key === "Escape") closeModal();
+  });
+
+  /* ---------- Theme ---------- */
+  function applyTheme(theme){
+    const t = (theme === "light") ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", t);
+
+    try { localStorage.setItem(LS_THEME_KEY, t); } catch(e) {}
+
+    const btn = document.getElementById("themeBtn");
+    const sideIcon = document.getElementById("sideThemeIcon");
+    const setThemeName = document.getElementById("setThemeName");
+
+    if(btn) btn.textContent = (t === "light") ? "☀️ Light" : "🌙 Dark";
+    if(sideIcon) sideIcon.textContent = (t === "light") ? "☀️" : "🌙";
+    if(setThemeName) setThemeName.textContent = (t === "light") ? "Light" : "Dark";
+  }
+
+  function toggleTheme(){
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(cur === "dark" ? "light" : "dark");
+    renderDashboard();
+  }
+
+  /* ---------- Sidebar ---------- */
+  function applySidebarState(collapsed){
+    const shell = document.getElementById("shell");
+    shell.classList.toggle("collapsed", !!collapsed);
+    try{ localStorage.setItem(LS_SIDEBAR_KEY, collapsed ? "1" : "0"); }catch(e){}
+    const setSidebarName = document.getElementById("setSidebarName");
+    if(setSidebarName) setSidebarName.textContent = collapsed ? "Dar" : "Geniş";
+  }
+
+  function toggleSidebar(){
+    const shell = document.getElementById("shell");
+    const collapsed = shell.classList.contains("collapsed");
+    applySidebarState(!collapsed);
+  }
+
+  /* ---------- Views ---------- */
+  function showView(view){
+    const map = {
+      dashboard: { id: "view-dashboard", title: "Dashboard" },
+      patients:  { id: "view-patients",  title: "Hastalar" },
+      settings:  { id: "view-settings",  title: "Ayarlar" },
+    };
+    const v = map[view] ? view : "dashboard";
+
+    for(const k of Object.keys(map)){
+      const el = document.getElementById(map[k].id);
+      if(el) el.classList.toggle("active", k === v);
+    }
+
+    const titleEl = document.getElementById("pageTitle");
+    if(titleEl) titleEl.textContent = map[v].title;
+
+    document.querySelectorAll(".navBtn").forEach(b=>{
+      b.classList.toggle("active", b.dataset.view === v);
+    });
+
+    try{ localStorage.setItem(LS_VIEW_KEY, v); }catch(e){}
+
+    if(v === "patients"){
+      if(globalQuery){
+        document.getElementById("q").value = globalQuery;
+      }
+      renderPatients();
+    }else if(v === "settings"){
+      syncSlotToSettingsUI();
+      renderModelUI();
+      syncProfileToSettingsUI();
+      syncAvatarToSettingsUI();
+    }else{
+      renderDashboard();
+    }
+  }
+
+  function jumpToSlotSettings(){
+    showView("patients");
+    setTimeout(() => {
+      document.getElementById("slotPanel")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, 50);
+  }
+
+  function jumpToPatients(){
+    showView("patients");
+    setTimeout(() => {
+      document.getElementById("patientsTable")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, 50);
+  }
+
+  /* ---------- Profile (Settings) ---------- */
+  function getProfileOverride(){
+    try{
+      const raw = localStorage.getItem(LS_USER_OVERRIDE_KEY);
+      if(!raw) return null;
+      const o = JSON.parse(raw) || {};
+      const name = String(o.name || "").trim();
+      const email = String(o.email || "").trim();
+      if(!name && !email) return null;
+      return { name, email };
+    }catch(e){
+      return null;
+    }
+  }
+
+  function setProfileOverride(obj){
+    try{
+      localStorage.setItem(LS_USER_OVERRIDE_KEY, JSON.stringify({
+        name: String(obj?.name || "").trim(),
+        email: String(obj?.email || "").trim()
+      }));
+    }catch(e){}
+  }
+
+  function getAvatarOverride(){
+    try{
+      const raw = localStorage.getItem(LS_AVATAR_OVERRIDE_KEY);
+      if(!raw) return null;
+      const o = JSON.parse(raw) || {};
+      const avatar = String(o.avatar || "").trim();
+      if(!avatar) return null;
+      return { avatar };
+    }catch(e){
+      return null;
+    }
+  }
+
+  function setAvatarOverride(avatar){
+    try{
+      localStorage.setItem(LS_AVATAR_OVERRIDE_KEY, JSON.stringify({ avatar: String(avatar || "").trim() }));
+    }catch(e){}
+  }
+
+  function effectiveProfile(){
+    const ov = getProfileOverride();
+    const av = getAvatarOverride();
+    const name = (ov?.name || AUTH_USER.name || "").trim() || "Kullanıcı";
+    const email = (ov?.email || AUTH_USER.email || "").trim();
+    const avatar = (av?.avatar || AUTH_USER.avatar || "").trim();
+    return { name, email, avatar };
+  }
+
+  function applyAvatarToUI(avatarUrl, nameForFallback){
+    const topImg = document.getElementById("topAvatarImg");
+    const topFallback = document.getElementById("topAvatarFallback");
+    const sideImg = document.getElementById("sideAvatarImg");
+    const sideFallback = document.getElementById("sideAvatarFallback");
+    const prevImg = document.getElementById("avatarPreviewImg");
+    const prevFallback = document.getElementById("avatarPreviewFallback");
+
+    const fallbackText = initialsFromName(nameForFallback);
+
+    if(topFallback) topFallback.textContent = fallbackText;
+    if(topImg){
+      if(avatarUrl){
+        topImg.src = avatarUrl;
+        topImg.style.display = "block";
+        if(topFallback) topFallback.style.display = "none";
+      }else{
+        topImg.removeAttribute("src");
+        topImg.style.display = "none";
+        if(topFallback) topFallback.style.display = "inline";
+      }
+    }
+
+    if(sideImg){
+      if(avatarUrl){
+        sideImg.src = avatarUrl;
+        sideImg.style.display = "block";
+        if(sideFallback) sideFallback.style.display = "none";
+      }else{
+        sideImg.removeAttribute("src");
+        sideImg.style.display = "none";
+        if(sideFallback) sideFallback.style.display = "inline";
+      }
+    }
+
+    if(prevFallback) prevFallback.textContent = fallbackText;
+    if(prevImg){
+      if(avatarUrl){
+        prevImg.src = avatarUrl;
+        prevImg.style.display = "block";
+        if(prevFallback) prevFallback.style.display = "none";
+      }else{
+        prevImg.removeAttribute("src");
+        prevImg.style.display = "none";
+        if(prevFallback) prevFallback.style.display = "inline";
+      }
+    }
+  }
+
+  function applyProfileToUI(){
+    const p = effectiveProfile();
+
+    const chip = document.getElementById("userChip");
+    if(chip) chip.style.display = "flex";
+
+    const uName = document.getElementById("userName");
+    const uEmail = document.getElementById("userEmail");
+    if(uName) uName.textContent = p.name;
+    if(uEmail) uEmail.textContent = p.email || "—";
+
+    const mini = document.getElementById("sideUserMini");
+    if(mini) mini.textContent = p.name || p.email || "—";
+
+    applyAvatarToUI(p.avatar, p.name);
+  }
+
+  function syncProfileToSettingsUI(){
+    const p = effectiveProfile();
+    const n = document.getElementById("profileNameSet");
+    const e = document.getElementById("profileEmailSet");
+
+    if(n && document.activeElement !== n) n.value = p.name || "";
+    if(e && document.activeElement !== e) e.value = p.email || "";
+  }
+
+  function resetProfileEdits(){
+    syncProfileToSettingsUI();
+    toast("Sıfırlandı", "Profil alanları mevcut değerlerle dolduruldu.", "ok", 1800);
+  }
+
+  function clearProfileOverride(){
+    try{ localStorage.removeItem(LS_USER_OVERRIDE_KEY); }catch(e){}
+    applyProfileToUI();
+    syncProfileToSettingsUI();
+    toast("Temizlendi", "Lokal profil ayarı silindi. Sunucu verisi baz alındı.", "ok", 2200);
+  }
+
+  function isValidEmailBasic(email){
+    const s = String(email || "").trim();
+    if(!s) return false;
+    if(!s.includes("@")) return false;
+    const parts = s.split("@");
+    if(parts.length !== 2) return false;
+    if(parts[0].length < 1) return false;
+    if(!parts[1].includes(".")) return false;
+    return true;
+  }
+
+  async function saveProfileEdits(){
+    const name = String(document.getElementById("profileNameSet")?.value || "").trim();
+    const email = String(document.getElementById("profileEmailSet")?.value || "").trim();
+
+    if(!name){
+      toast("Ad Soyad gerekli", "Boş bırakma kanka.", "warn", 2200);
+      return;
+    }
+    if(email && !isValidEmailBasic(email)){
+      toast("E-posta hatalı", "Örn: ornek@gmail.com", "warn", 2200);
+      return;
+    }
+
+    let serverUpdated = false;
+    try{
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email })
+      });
+
+      if(res.ok){
+        const data = await res.json().catch(()=> ({}));
+        const u = data.user || data || {};
+        AUTH_USER = {
+          name: String(u.name || name || "").trim(),
+          email: String(u.email || email || "").trim(),
+          avatar: String(u.avatar || u.avatar_url || u.avatarUrl || u.photo || u.photo_url || AUTH_USER.avatar || "").trim()
+        };
+        try{ localStorage.removeItem(LS_USER_OVERRIDE_KEY); }catch(e){}
+        serverUpdated = true;
+      }
+    }catch(e){}
+
+    if(!serverUpdated){
+      setProfileOverride({ name, email });
+    }
+
+    applyProfileToUI();
+    syncProfileToSettingsUI();
+
+    toast(
+      "Kaydedildi",
+      serverUpdated ? "Sunucu profili güncellendi." : "Sunucu endpoint yoksa lokal olarak kaydedildi.",
+      "ok",
+      2400
+    );
+  }
+
+  /* ---------- Avatar (Settings) ---------- */
+  function syncAvatarToSettingsUI(){
+    const p = effectiveProfile();
+    applyAvatarToUI(p.avatar, p.name);
+
+    const file = document.getElementById("avatarFile");
+    if(file && file.value && document.activeElement === file) return;
+  }
+
+  function resetAvatarEdits(){
+    syncAvatarToSettingsUI();
+    const file = document.getElementById("avatarFile");
+    if(file) file.value = "";
+    toast("Sıfırlandı", "Avatar mevcut değerle geri yüklendi.", "ok", 1800);
+  }
+
+  function clearAvatarOverride(){
+    try{ localStorage.removeItem(LS_AVATAR_OVERRIDE_KEY); }catch(e){}
+    applyProfileToUI();
+    syncAvatarToSettingsUI();
+    toast("Temizlendi", "Lokal avatar silindi. Sunucu verisi baz alındı.", "ok", 2200);
+  }
+
+  function fileToDataURL(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ""));
+      r.onerror = () => reject(new Error("read error"));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function saveAvatarEdits(){
+    const fileEl = document.getElementById("avatarFile");
+    const file = fileEl?.files?.[0];
+
+    if(!file){
+      toast("Foto seç", "Kaydetmeden önce bir görsel seçmelisin.", "warn", 2200);
+      return;
+    }
+
+    let dataUrl = "";
+    try{
+      dataUrl = await fileToDataURL(file);
+    }catch(e){
+      toast("Okunamadı", "Dosya okunamadı.", "bad", 2200);
+      return;
+    }
+
+    let serverUpdated = false;
+    try{
+      const fd = new FormData();
+      fd.append("avatar", file);
+
+      const res = await fetch("/api/auth/avatar", { method:"POST", body: fd });
+      if(res.ok){
+        const data = await res.json().catch(()=> ({}));
+        const u = data.user || data || {};
+        const avatarUrl = String(u.avatar || u.avatar_url || u.avatarUrl || u.photo || u.photo_url || "").trim();
+        if(avatarUrl){
+          AUTH_USER.avatar = avatarUrl;
+          try{ localStorage.removeItem(LS_AVATAR_OVERRIDE_KEY); }catch(e){}
+          serverUpdated = true;
+        }
+      }
+    }catch(e){}
+
+    if(!serverUpdated){
+      setAvatarOverride(dataUrl);
+    }
+
+    applyProfileToUI();
+    syncAvatarToSettingsUI();
+
+    toast(
+      "Kaydedildi",
+      serverUpdated ? "Sunucu avatarı güncellendi." : "Sunucu endpoint yoksa lokal olarak kaydedildi.",
+      "ok",
+      2400
+    );
+
+    if(fileEl) fileEl.value = "";
+  }
+
+  /* ---------- Password (Settings) ---------- */
+  async function changePassword(){
+    const oldPw = String(document.getElementById("pwOld")?.value || "");
+    const newPw = String(document.getElementById("pwNew")?.value || "");
+    const newPw2 = String(document.getElementById("pwNew2")?.value || "");
+
+    if(!oldPw || !newPw || !newPw2){
+      toast("Eksik alan", "Mevcut + yeni + tekrar doldur.", "warn", 2200);
+      return;
+    }
+    if(newPw.length < 8){
+      toast("Zayıf şifre", "En az 8 karakter öneririm.", "warn", 2200);
+      return;
+    }
+    if(newPw !== newPw2){
+      toast("Uymuyor", "Yeni şifre ve tekrar aynı olmalı.", "warn", 2200);
+      return;
+    }
+
+    const ok = await confirmModal(
+      "Şifre değiştir",
+      "Şifren güncellenecek. Devam edilsin mi?",
+      "Güncelle",
+      "Vazgeç"
+    );
+    if(!ok) return;
+
+    try{
+      const res = await fetch("/api/auth/password", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ old_password: oldPw, new_password: newPw })
+      });
+
+      if(res.ok){
+        toast("Başarılı", "Şifre güncellendi.", "ok", 2200);
+        document.getElementById("pwOld").value = "";
+        document.getElementById("pwNew").value = "";
+        document.getElementById("pwNew2").value = "";
+        return;
+      }
+
+      const data = await res.json().catch(()=> ({}));
+      toast("Olmadı", data.error || "Endpoint yok veya şifre yanlış olabilir.", "bad", 2600);
+    }catch(e){
+      toast("Demo modu", "Backend endpoint yoksa şifre değişimi yapılamaz.", "warn", 2600);
+    }
+  }
+
+  /* ---------- Auth ---------- */
+  async function loadMe(){
+    try{
+      const res = await fetch("/api/auth/me");
+      const data = await res.json().catch(()=> ({}));
+      if(!data.logged_in){
+        location.href = "/login";
+        return;
+      }
+
+      const u = data.user || {};
+      AUTH_USER = {
+        name: (u.name || "").trim() || "Kullanıcı",
+        email: (u.email || "").trim() || "",
+        avatar: String(u.avatar || u.avatar_url || u.avatarUrl || u.photo || u.photo_url || "").trim()
+      };
+
+      applyProfileToUI();
+      syncProfileToSettingsUI();
+      syncAvatarToSettingsUI();
+
+    }catch(e){
+      toast("Sunucu yok", "Flask çalışıyor mu? (127.0.0.1:5000)", "bad", 2600);
+    }
+  }
+
+  async function logout(){
+    const ok = await confirmModal(
+      "Çıkış yap",
+      "Oturum kapatılacak ve login sayfasına yönlendirileceksin.",
+      "Çıkış Yap",
+      "Vazgeç",
+      true
+    );
+    if(!ok) return;
+
+    try{ await fetch("/api/auth/logout", { method:"POST" }); }catch(e){}
+    location.href = "/login";
+  }
+
+  /* ---------- localStorage: patients ---------- */
+  function savePatients(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(patients)); }
+    catch(e){ toast("Kayıt başarısız", "Tarayıcı depolaması yazılamadı.", "warn", 2400); }
+  }
+
+  function loadPatients(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return false;
+      const arr = JSON.parse(raw);
+      if(!Array.isArray(arr)) return false;
+
+      patients = arr.map(x => ({
+        id: String(x?.id || "").trim() || makeId(),
+        name: String(x?.name ?? "").trim(),
+        email: String(x?.email ?? "").trim(),
+        age: Number(x?.age ?? 0),
+        missed: Number(x?.missed ?? 0),
+        severity: Number(x?.severity ?? 0),
+        conditions: Array.isArray(x?.conditions) ? x.conditions.map(c => String(c).trim().toLowerCase()).filter(Boolean) : []
+      })).filter(p => p.name);
+
+      // id’leri localStorage’a geri yaz (kalıcı kalsın)
+      savePatients();
+
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* ---------- localStorage: model ---------- */
+  function loadModel(){
+    try{
+      const raw = localStorage.getItem(LS_MODEL_KEY);
+      if(!raw) return false;
+      const obj = JSON.parse(raw) || {};
+      const cw = obj.condition_weights || {};
+      MODEL = {
+        age_factor: clampFloat(obj.age_factor, 0, 5, DEFAULT_MODEL.age_factor),
+        severity_factor: clampFloat(obj.severity_factor, 0, 50, DEFAULT_MODEL.severity_factor),
+        missed_penalty_factor: clampFloat(obj.missed_penalty_factor, 0, 100, DEFAULT_MODEL.missed_penalty_factor),
+        max_age: clampFloat(obj.max_age, 0, 130, DEFAULT_MODEL.max_age),
+        condition_weights: {}
+      };
+
+      for(const k of Object.keys(DEFAULT_MODEL.condition_weights)){
+        MODEL.condition_weights[k] = clampFloat(cw[k], -9999, 9999, DEFAULT_MODEL.condition_weights[k]);
+      }
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function saveModel(){
+    try{ localStorage.setItem(LS_MODEL_KEY, JSON.stringify(MODEL)); }catch(e){}
+  }
+
+  /* ---------- localStorage: slot settings ---------- */
+  function getSlotSettings(){
+    const start_date = (document.getElementById('slotDate')?.value || "").trim();
+    const start_time = (document.getElementById('slotTime')?.value || "09:00").trim();
+    const duration_min = Number(document.getElementById('slotDuration')?.value || 20);
+    const slot_count = Number(document.getElementById('slotCount')?.value || 12);
+
+    return {
+      start_date,
+      start_time,
+      duration_min: isFinite(duration_min) ? duration_min : 20,
+      slot_count: isFinite(slot_count) ? slot_count : 12
+    };
+  }
+
+  function saveSlotSettings(){
+    try{ localStorage.setItem(LS_SLOT_KEY, JSON.stringify(getSlotSettings())); }
+    catch(e){ toast("Slot kaydı başarısız", "Tarayıcı depolaması yazılamadı.", "warn", 2200); }
+    renderDashboard();
+  }
+
+  function loadSlotSettings(){
+    try{
+      const raw = localStorage.getItem(LS_SLOT_KEY);
+      if(!raw) return false;
+      const s = JSON.parse(raw) || {};
+      if(s.start_date) document.getElementById('slotDate').value = s.start_date;
+      if(s.start_time) document.getElementById('slotTime').value = s.start_time;
+      if(s.duration_min) document.getElementById('slotDuration').value = s.duration_min;
+      if(s.slot_count) document.getElementById('slotCount').value = s.slot_count;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* ---------- Settings: slot sync ---------- */
+  function syncSlotToSettingsUI(){
+    const s = getSlotSettings();
+    const a = document.getElementById('slotDateSet');
+    const b = document.getElementById('slotTimeSet');
+    const c = document.getElementById('slotDurationSet');
+    const d = document.getElementById('slotCountSet');
+    if(a) a.value = s.start_date || "";
+    if(b) b.value = s.start_time || "09:00";
+    if(c) c.value = s.duration_min ?? 20;
+    if(d) d.value = s.slot_count ?? 12;
+  }
+
+  function syncSlotFromPatientsUI(){
+    syncSlotToSettingsUI();
+  }
+
+  function applySlotFromSettingsUI(){
+    const a = (document.getElementById('slotDateSet')?.value || "").trim();
+    const b = (document.getElementById('slotTimeSet')?.value || "09:00").trim();
+    const c = Number(document.getElementById('slotDurationSet')?.value || 20);
+    const d = Number(document.getElementById('slotCountSet')?.value || 12);
+
+    document.getElementById('slotDate').value = a;
+    document.getElementById('slotTime').value = b;
+    document.getElementById('slotDuration').value = isFinite(c) ? c : 20;
+    document.getElementById('slotCount').value = isFinite(d) ? d : 12;
+
+    saveSlotSettings();
+    renderDashboard();
+    toast("Slot kaydedildi", "Ayarlar → Hastalar senkronlandı.", "ok", 2000);
+  }
+
+  /* ---------- localStorage: last schedule ---------- */
+  function saveLastSchedule(){
+    try{ if(lastSchedule) localStorage.setItem(LS_LAST_RESULTS_KEY, JSON.stringify(lastSchedule)); }catch(e){}
+  }
+  function loadLastSchedule(){
+    try{
+      const raw = localStorage.getItem(LS_LAST_RESULTS_KEY);
+      if(!raw) return false;
+      const obj = JSON.parse(raw);
+      if(!obj || !Array.isArray(obj.results)) return false;
+      lastSchedule = obj;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* ---------- Filters ---------- */
+  function getFilters(){
+    const q = (document.getElementById('q')?.value || "").trim().toLowerCase();
+    const minScore = Number(document.getElementById('minScore')?.value || 0);
+    const onlyBadMissed = !!document.getElementById('onlyBadMissed')?.checked;
+    return { q, minScore: isFinite(minScore) ? minScore : 0, onlyBadMissed };
+  }
+
+  function onFiltersChanged(){ renderPatients(); }
+
+  function resetFilters(){
+    document.getElementById('q').value = "";
+    document.getElementById('minScore').value = 0;
+    document.getElementById('onlyBadMissed').checked = false;
+    renderPatients();
+    toast("Filtreler sıfırlandı", "Tüm hastalar tekrar görünür.", "ok", 2000);
+  }
+
+  function selectedConditions(){
+    const sel = document.getElementById('conditions');
+    return Array.from(sel.selectedOptions).map(o => o.value);
+  }
+
+  function setSelectedConditions(values){
+    const set = new Set((values || []).map(v => String(v).trim().toLowerCase()));
+    const sel = document.getElementById('conditions');
+    Array.from(sel.options).forEach(opt => { opt.selected = set.has(opt.value); });
+  }
+
+  /* ---------- Scoring / Badges ---------- */
+  function computePreviewScore(p){
+    const age = Number(p.age || 0);
+    const missed = Number(p.missed || 0);
+    const severity = Number(p.severity || 0);
+    const conditions = Array.isArray(p.conditions) ? p.conditions : [];
+
+    let condScore = 0;
+    for(const c of conditions){
+      const key = String(c || '').trim().toLowerCase();
+      condScore += (MODEL.condition_weights[key] || 0);
+    }
+
+    const ageScore = Math.min(age, MODEL.max_age) * MODEL.age_factor;
+    const sevScore = severity * MODEL.severity_factor;
+    const missedPenalty = missed * MODEL.missed_penalty_factor;
+
+    const total = condScore + ageScore + sevScore - missedPenalty;
+    return Math.round(total * 100) / 100;
+  }
+
+  function scoreBadge(score){
+    score = Number(score || 0);
+    if(score >= 70) return `<span class="pill bad">Çok Yüksek • ${score}</span>`;
+    if(score >= 35) return `<span class="pill warn">Orta/Yüksek • ${score}</span>`;
+    return `<span class="pill ok">Düşük/Orta • ${score}</span>`;
+  }
+
+  function missedBadge(missed){
+    missed = Number(missed || 0);
+    if(missed >= 2) return `<span class="pill bad">⚠ Çok Gelmeme (${missed})</span>`;
+    if(missed === 1) return `<span class="pill warn">Gelmeme (1)</span>`;
+    return `<span class="pill ok">Düzenli (0)</span>`;
+  }
+
+  function missedLevelBadgeFromResult(r){
+    const level = String(r?.missed_level || "").toLowerCase();
+    const label = String(r?.missed_label || "").trim();
+    const missed = Number(r?.missed || 0);
+
+    if(level === "severe") return `<span class="pill bad">${escapeHtml(label || `⚠ 2+ kez gelmedi (${missed})`)}</span>`;
+    if(level === "warn") return `<span class="pill warn">${escapeHtml(label || `1 kez gelmedi`)}</span>`;
+    if(level === "ok") return `<span class="pill ok">${escapeHtml(label || `Düzenli`)}</span>`;
+    return missedBadge(missed);
+  }
+
+  function matchesFilters(p, score, filters){
+    if(filters.onlyBadMissed && Number(p.missed || 0) < 2) return false;
+    if(score < filters.minScore) return false;
+
+    const qLocal = (filters.q || "").trim();
+    const qGlobal = (globalQuery || "").trim();
+    const q = (qLocal || qGlobal).toLowerCase();
+
+    if(q){
+      const hay = `${p.name || ""} ${p.email || ""}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  /* ---------- Render: Patients ---------- */
+  function renderPatients(){
+    const tbody = document.querySelector('#patientsTable tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    const filters = getFilters();
+
+    const ranked = patients.map((p, idx) => {
+      const score = computePreviewScore(p);
+      const age = Number(p.age || 0);
+      const missed = Number(p.missed || 0);
+      return { p, idx, score, age, missed };
+    });
+
+    ranked.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.age !== a.age) return b.age - a.age;
+      return a.missed - b.missed;
+    });
+
+    const visible = ranked.filter(it => matchesFilters(it.p, it.score, filters));
+
+    const frag = document.createDocumentFragment();
+
+    visible.forEach((item, i) => {
+      const p = item.p;
+      const tr = document.createElement('tr');
+      tr.className = "rowClick";
+      tr.dataset.pid = String(p.id || "");
+      tr.title = "Hasta dosyasına gitmek için satıra tıkla";
+
+      tr.innerHTML = `
+        <td><span class="pill">${i+1}</span></td>
+        <td><b>${escapeHtml(p.name || '')}</b></td>
+        <td>${p.age ?? ''}</td>
+        <td>${p.severity ?? ''}</td>
+        <td>${p.missed ?? ''}</td>
+        <td>${missedBadge(p.missed)}</td>
+        <td>${scoreBadge(item.score)}</td>
+        <td>${(p.conditions||[]).map(c=>`<span class="pill">${escapeHtml(c)}</span>`).join('')}</td>
+        <td>${escapeHtml(p.email || '')}</td>
+
+        <td>
+          <button class="iconBtn" onclick="openPatientFile(${JSON.stringify(String(p.id || ""))})" title="Hasta dosyası">📁</button>
+        </td>
+
+        <td><button class="iconBtn" onclick="editPatient(${item.idx})" title="Düzenle">✏️</button></td>
+        <td><button class="iconBtn danger" onclick="removePatient(${item.idx})" title="Sil">🗑</button></td>
+      `;
+      frag.appendChild(tr);
+    });
+
+    if(visible.length === 0){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="12" class="sub" style="padding:14px">Bu filtrelerle eşleşen hasta yok.</td>`;
+      frag.appendChild(tr);
+    }
+
+    tbody.appendChild(frag);
+
+    renderDashboard();
+  }
+
+  /* ---------- Form ---------- */
+  function submitForm(){
+    const p = {
+      id: (editIndex !== null && patients[editIndex]?.id) ? patients[editIndex].id : makeId(),
+      name: document.getElementById('name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      age: clamp(document.getElementById('age').value, 0, 120),
+      missed: clamp(document.getElementById('missed').value, 0, 50),
+      severity: clamp(document.getElementById('severity').value, 0, 10),
+      conditions: selectedConditions()
+    };
+
+    if(!p.name){
+      toast("İsim gerekli", "Hasta eklemek/güncellemek için isim yaz.", "warn", 2400);
+      return;
+    }
+
+    if(editIndex === null){
+      patients.push(p);
+      savePatients();
+      renderPatients();
+      clearResults();
+      toast("Hasta eklendi", `${p.name} listeye eklendi.`, "ok", 2200);
+      clearForm();
+      return;
+    }
+
+    if(editIndex < 0 || editIndex >= patients.length){
+      toast("Hata", "Düzenlenen kayıt bulunamadı.", "bad", 2400);
+      exitEditMode();
+      return;
+    }
+
+    const oldName = patients[editIndex]?.name || "Hasta";
+    patients[editIndex] = p;
+    savePatients();
+    renderPatients();
+    clearResults();
+    toast("Güncellendi", `${oldName} → ${p.name}`, "ok", 2400);
+    exitEditMode();
+    clearForm();
+  }
+
+  function editPatient(index){
+    if(index < 0 || index >= patients.length) return;
+
+    const p = patients[index];
+    editIndex = index;
+
+    document.getElementById('name').value = p.name || "";
+    document.getElementById('email').value = p.email || "";
+    document.getElementById('age').value = Number(p.age || 0);
+    document.getElementById('missed').value = Number(p.missed || 0);
+    document.getElementById('severity').value = Number(p.severity || 0);
+    setSelectedConditions(p.conditions || []);
+
+    document.getElementById('primaryBtn').textContent = "Güncelle";
+    document.getElementById('cancelEditBtn').style.display = "inline-block";
+    document.getElementById('editInfo').style.display = "inline-flex";
+    document.getElementById('editName').textContent = p.name || "";
+
+    toast("Düzenleme modu", `${p.name} form içine yüklendi.`, "warn", 2200);
+    document.getElementById('name').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit(){
+    if(editIndex === null){
+      toast("Zaten normal mod", "Düzenleme modu açık değil.", "warn", 1600);
+      return;
+    }
+    toast("İptal edildi", "Düzenleme modu kapatıldı.", "warn", 2000);
+    exitEditMode();
+    clearForm();
+  }
+
+  function exitEditMode(){
+    editIndex = null;
+    document.getElementById('primaryBtn').textContent = "Ekle";
+    document.getElementById('cancelEditBtn').style.display = "none";
+    document.getElementById('editInfo').style.display = "none";
+    document.getElementById('editName').textContent = "";
+  }
+
+  function clearForm(){
+    document.getElementById('name').value = "";
+    document.getElementById('email').value = "";
+    document.getElementById('age').value = 45;
+    document.getElementById('missed').value = 0;
+    document.getElementById('severity').value = 5;
+    setSelectedConditions(["genel"]);
+  }
+
+  async function removePatient(index){
+    if(index < 0 || index >= patients.length) return;
+
+    const p = patients[index];
+    const name = (p && p.name) ? p.name : "Bu hasta";
+
+    const ok = await confirmModal(
+      "Hasta Sil",
+      `<b>${escapeHtml(name)}</b> kaydını silmek istiyor musun?<br><br><span class="bad">Bu işlem geri alınamaz.</span>`,
+      "Sil",
+      "Vazgeç",
+      true
+    );
+
+    if(!ok){
+      toast("İşlem iptal", "Silme işlemi yapılmadı.", "warn", 1800);
+      return;
+    }
+
+    if(editIndex === index){
+      exitEditMode();
+      clearForm();
+    }else if(editIndex !== null && editIndex > index){
+      editIndex -= 1;
+    }
+
+    patients.splice(index, 1);
+    savePatients();
+    renderPatients();
+    clearResults();
+    toast("Silindi", `${name} listeden kaldırıldı.`, "bad", 2400);
+  }
+
+  async function clearAll(){
+    if(patients.length === 0){
+      toast("Zaten boş", "Listede hasta yok.", "warn", 1800);
+      return;
+    }
+
+    const ok = await confirmModal(
+      "Tüm Hastaları Sil",
+      `Tüm hastaları silmek istiyor musun?<br><br><span class="bad">Bu işlem geri alınamaz.</span>`,
+      "Hepsini Sil",
+      "Vazgeç",
+      true
+    );
+    if(!ok){
+      toast("İşlem iptal", "Temizleme yapılmadı.", "warn", 1800);
+      return;
+    }
+
+    patients = [];
+    try{ localStorage.removeItem(LS_KEY); }catch(e){}
+    exitEditMode();
+    clearForm();
+    renderPatients();
+    clearResults();
+    toast("Temizlendi", "Tüm hastalar silindi.", "bad", 2400);
+  }
+
+  function clearResults(){
+    const el = document.getElementById("results");
+    if(el) el.innerHTML = "";
+  }
+
+  function scrollToResults(){
+    document.getElementById("results")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  /* ---------- Demo ---------- */
+  async function loadDemo(){
+    let res;
+    try{ res = await fetch('/api/demo'); }
+    catch(e){
+      toast("Sunucuya ulaşılamadı", "Flask çalışıyor mu?", "bad", 2400);
+      return;
+    }
+
+    if(res.status === 401){
+      toast("Giriş gerekli", "Demo yüklemek için önce giriş yap.", "warn", 2400);
+      setTimeout(()=> location.href="/login", 600);
+      return;
+    }
+
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok){
+      toast("Hata", data.error || "Demo yüklenemedi.", "bad", 2400);
+      return;
+    }
+
+    patients = data.patients || [];
+
+    // id garanti (demo dahil)
+    patients = patients.map(p => ({
+      id: String(p?.id || "").trim() || makeId(),
+      name: p?.name,
+      email: p?.email,
+      age: p?.age,
+      missed: p?.missed,
+      severity: p?.severity,
+      conditions: Array.isArray(p?.conditions) ? p.conditions : []
+    }));
+
+    savePatients();
+    exitEditMode();
+    clearForm();
+    renderPatients();
+    clearResults();
+    toast("Demo yüklendi", `${patients.length} hasta listeye geldi.`, "ok", 2200);
+
+    showView('patients');
+  }
+
+  /* ---------- Schedule ---------- */
+  async function schedule(){
+    if(patients.length === 0){
+      toast("Hasta yok", "Önce hasta ekle veya demo yükle.", "warn", 2400);
+      return;
+    }
+
+    const slot_settings = getSlotSettings();
+    if(!slot_settings.start_date){
+      toast("Slot tarihi boş", "Başlangıç tarihi seç.", "warn", 2400);
+      return;
+    }
+
+    const ok = await confirmModal(
+      "Planı Çalıştır",
+      `Toplam <b>${patients.length}</b> hasta için önceliklendirme ve slot ataması yapılacak.<br><br>Devam edilsin mi?`,
+      "Çalıştır",
+      "Vazgeç"
+    );
+    if(!ok) return;
+
+    let res;
+    try{
+      res = await fetch('/api/schedule', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ patients, slot_settings })
+      });
+    }catch(e){
+      toast("Sunucuya ulaşılamadı", "Flask çalışıyor mu?", "bad", 2600);
+      return;
+    }
+
+    if(res.status === 401){
+      toast("Oturum bitti", "Tekrar giriş yapman gerekiyor.", "warn", 2400);
+      setTimeout(()=> location.href="/login", 600);
+      return;
+    }
+
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok){
+      toast("Hata", data.error || "Schedule çalışmadı.", "bad", 2600);
+      return;
+    }
+
+    const results = data.results || [];
+    lastSchedule = { slot_settings_used: data.slot_settings_used || slot_settings, results };
+    saveLastSchedule();
+
+    renderResults(results);
+    toast("Plan hazır", `${results.length} hastaya slot atandı.`, "ok", 2400);
+
+    renderDashboard();
+    showView('dashboard');
+  }
+
+  function renderResults(results){
+    const host = document.getElementById('results');
+    if(!host) return;
+
+    host.innerHTML = results.map((r, idx) => {
+      const manual = (r && r.needs_manual_confirm) ? `<span class="pill bad">MANUAL CONFIRM</span>` : ``;
+      const penalty = (r && (r.missed_penalty !== undefined)) ? `<span class="pill warn">Ceza: ${escapeHtml(r.missed_penalty)}</span>` : ``;
+
+      const mailId = `mail_${idx}`;
+      return `
+        <div class="resultCard">
+          <div class="resultHead">
+            <div class="resultName">${idx+1}) ${escapeHtml(r.name || "")}</div>
+            <div>${scoreBadge(r.score)} ${manual}</div>
+          </div>
+
+          <div class="resultMetaRow">
+            <span class="pill">Yaş: <b>${escapeHtml(r.age)}</b></span>
+            <span class="pill">Severity: <b>${escapeHtml(r.severity)}</b></span>
+            ${missedLevelBadgeFromResult(r)}
+            ${penalty}
+          </div>
+
+          <div class="resultMetaRow">
+            <span class="pill">Slot:</span>
+            <span class="pill"><b>${escapeHtml(r.assigned_slot || 'Slot yok')}</b></span>
+            ${(r.conditions||[]).map(c=>`<span class="pill">${escapeHtml(c)}</span>`).join('')}
+          </div>
+
+          <div class="mailBox">
+            <button class="copyBtn" onclick="copyMail('${mailId}')">Kopyala</button>
+            <div class="subSmall" style="font-weight:900;margin-bottom:8px">Mail Önizleme</div>
+            <div id="${mailId}" class="mono">${escapeHtml(r.email_preview || "")}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function copyMail(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const text = el.textContent || "";
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("Kopyalandı", "Mail metni panoya alındı.", "ok", 1800);
+    }catch(e){
+      toast("Kopyalama olmadı", "Tarayıcı izin vermedi. Manuel seçip kopyala.", "warn", 2200);
+    }
+  }
+
+  /* ---------- CSV ---------- */
+  function csvEscape(v){
+    const s = String(v ?? "");
+    if (/[",\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+    return s;
+  }
+
+  function downloadCsv(filename, rows){
+    const csv = rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function stampNow(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function exportPatientsCsv(){
+    if(!patients.length){
+      toast("CSV yok", "Hasta listesi boş.", "warn", 2200);
+      return;
+    }
+
+    const rows = [];
+    rows.push(["name","email","age","severity","missed","conditions","preview_score"]);
+
+    for(const p of patients){
+      const score = computePreviewScore(p);
+      rows.push([
+        p.name || "",
+        p.email || "",
+        p.age ?? "",
+        p.severity ?? "",
+        p.missed ?? "",
+        (p.conditions || []).join(";"),
+        score
+      ]);
+    }
+
+    downloadCsv(`patients_${stampNow()}.csv`, rows);
+    toast("CSV indirildi", "Hasta listesi CSV oluşturuldu.", "ok", 2200);
+  }
+
+  function exportResultsCsv(){
+    if(!lastSchedule || !Array.isArray(lastSchedule.results) || lastSchedule.results.length === 0){
+      toast("Sonuç yok", "Önce 'Önceliklendirme' çalıştır, sonra CSV al.", "warn", 2600);
+      return;
+    }
+
+    const used = lastSchedule.slot_settings_used || {};
+    const rows = [];
+    rows.push(["slot_start_date","slot_start_time","duration_min","slot_count"]);
+    rows.push([used.start_date || "", used.start_time || "", used.duration_min ?? "", used.slot_count ?? ""]);
+    rows.push([]);
+    rows.push(["rank","name","email","age","severity","missed","missed_level","missed_label","needs_manual_confirm","missed_penalty","conditions","score","assigned_slot"]);
+
+    lastSchedule.results.forEach((r, idx) => {
+      rows.push([
+        idx+1,
+        r.name || "",
+        r.email || "",
+        r.age ?? "",
+        r.severity ?? "",
+        r.missed ?? "",
+        r.missed_level ?? "",
+        r.missed_label ?? "",
+        (r.needs_manual_confirm ? "true" : "false"),
+        (r.missed_penalty ?? ""),
+        (r.conditions || []).join(";"),
+        r.score ?? "",
+        r.assigned_slot || ""
+      ]);
+    });
+
+    downloadCsv(`schedule_results_${stampNow()}.csv`, rows);
+    toast("CSV indirildi", "Plan sonuçları CSV oluşturuldu.", "ok", 2200);
+  }
+
+  /* ---------- Dashboard Render ---------- */
+  function computeStats(){
+    const total = patients.length;
+
+    let high = 0;
+    let mid = 0;
+    let low = 0;
+    let badMissed = 0;
+
+    const scores = [];
+    for(const p of patients){
+      const s = computePreviewScore(p);
+      scores.push(s);
+      if(s >= 70) high++;
+      else if(s >= 35) mid++;
+      else low++;
+      if(Number(p.missed||0) >= 2) badMissed++;
+    }
+
+    const lastCount = (lastSchedule && Array.isArray(lastSchedule.results)) ? lastSchedule.results.length : 0;
+    const slot = getSlotSettings();
+    const slotText = (slot.start_date ? `${slot.start_date} ${slot.start_time || "09:00"}` : "—");
+
+    const avg = scores.length ? (scores.reduce((a,b)=>a+b,0) / scores.length) : 0;
+    const avg2 = Math.round(avg*100)/100;
+
+    return { total, high, mid, low, badMissed, lastCount, slotText, avg2, scores };
+  }
+
+  function renderDashboard(){
+    const statsGrid = document.getElementById("statsGrid");
+    const dashLastPlan = document.getElementById("dashLastPlan");
+    const bars = document.getElementById("scoreBars");
+    const labels = document.getElementById("scoreBarLabels");
+    if(!statsGrid || !dashLastPlan || !bars || !labels) return;
+
+    const s = computeStats();
+
+    statsGrid.innerHTML = `
+      <div class="stat">
+        <div class="statLabel">Toplam Hasta</div>
+        <div class="statValue">${s.total}</div>
+        <div class="statMeta">Kayıtlı hasta sayısı</div>
+      </div>
+
+      <div class="stat">
+        <div class="statLabel">Ortalama Skor</div>
+        <div class="statValue">${s.avg2}</div>
+        <div class="statMeta">Preview skor ortalaması</div>
+      </div>
+
+      <div class="stat">
+        <div class="statLabel">Missed ≥ 2</div>
+        <div class="statValue">${s.badMissed}</div>
+        <div class="statMeta">Daha “riskli” randevu</div>
+      </div>
+
+      <div class="stat">
+        <div class="statLabel">Slot Başlangıç</div>
+        <div class="statValue" style="font-size:16px">${escapeHtml(s.slotText)}</div>
+        <div class="statMeta">Ayar panelinden değişir</div>
+      </div>
+    `;
+
+    if(!lastSchedule || !Array.isArray(lastSchedule.results) || lastSchedule.results.length === 0){
+      dashLastPlan.textContent = "Henüz plan yok.";
+    }else{
+      const top3 = lastSchedule.results.slice(0,3);
+      dashLastPlan.innerHTML = top3.map((r, i)=> `
+        <div style="margin-top:${i?10:0}px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span class="pill">${i+1}</span>
+          <b>${escapeHtml(r.name || "")}</b>
+          <span class="pill">${escapeHtml(r.assigned_slot || "")}</span>
+          ${scoreBadge(r.score)}
+        </div>
+      `).join("") + (lastSchedule.results.length>3 ? `<div class="sub" style="margin-top:12px">+${lastSchedule.results.length-3} kişi daha…</div>` : "");
+    }
+
+    const arr = (lastSchedule && Array.isArray(lastSchedule.results) && lastSchedule.results.length)
+      ? lastSchedule.results.map(x => Number(x.score||0))
+      : s.scores;
+
+    const bins = [0, 15, 30, 45, 60, 75, 90, 9999];
+    const counts = new Array(7).fill(0);
+    for(const v of arr){
+      const x = Number(v||0);
+      let idx = 0;
+      while(idx < 7 && !(x >= bins[idx] && x < bins[idx+1])) idx++;
+      counts[Math.min(idx,6)]++;
+    }
+    const max = Math.max(1, ...counts);
+
+    bars.innerHTML = counts.map(c => {
+      const h = Math.round((c / max) * 100);
+      return `<div class="bar" title="${c}"><i style="height:${h}%"></i></div>`;
+    }).join("");
+
+    const ranges = ["0–15","15–30","30–45","45–60","60–75","75–90","90+"];
+    labels.innerHTML = ranges.map(r => `<div class="barLabel">${r}</div>`).join("");
+  }
+
+  /* ---------- Global Search ---------- */
+  function onGlobalSearch(){
+    globalQuery = (document.getElementById("globalSearch")?.value || "").trim().toLowerCase();
+
+    const isPatients = document.getElementById("view-patients")?.classList.contains("active");
+    if(isPatients){
+      const q = document.getElementById("q");
+      if(q && q.value.trim().toLowerCase() !== globalQuery){
+        q.value = globalQuery;
+      }
+      renderPatients();
+    }else{
+      renderDashboard();
+    }
+  }
+
+  /* ---------- Settings: model UI ---------- */
+  function renderModelUI(){
+    const a = document.getElementById("w_ageFactor");
+    const b = document.getElementById("w_maxAge");
+    const c = document.getElementById("w_sevFactor");
+    const d = document.getElementById("w_missedPenalty");
+    if(a) a.value = MODEL.age_factor;
+    if(b) b.value = MODEL.max_age;
+    if(c) c.value = MODEL.severity_factor;
+    if(d) d.value = MODEL.missed_penalty_factor;
+
+    const host = document.getElementById("condWeightsGrid");
+    if(!host) return;
+    host.innerHTML = "";
+
+    const nice = {
+      acil:"Acil", kalp:"Kalp", kanser:"Kanser", diyabet:"Diyabet",
+      hipertansiyon:"Hipertansiyon", astim:"Astım", gebelik:"Gebelik",
+      psikiyatri:"Psikiyatri", genel:"Genel"
+    };
+
+    for(const key of Object.keys(DEFAULT_MODEL.condition_weights)){
+      const el = document.createElement("div");
+      el.className = "wItem";
+      el.innerHTML = `
+        <div class="wTop">
+          <div>
+            <div class="wName">${escapeHtml(nice[key] || key)}</div>
+            <div class="wKey">${escapeHtml(key)}</div>
+          </div>
+          <div style="width:110px">
+            <input type="number" step="1" id="cw_${key}" value="${MODEL.condition_weights[key] ?? 0}" />
+          </div>
+        </div>
+      `;
+      host.appendChild(el);
+    }
+  }
+
+  function saveWeightsFromUI(){
+    const af = clampFloat(document.getElementById("w_ageFactor")?.value, 0, 5, DEFAULT_MODEL.age_factor);
+    const ma = clampFloat(document.getElementById("w_maxAge")?.value, 0, 130, DEFAULT_MODEL.max_age);
+    const sf = clampFloat(document.getElementById("w_sevFactor")?.value, 0, 50, DEFAULT_MODEL.severity_factor);
+    const mp = clampFloat(document.getElementById("w_missedPenalty")?.value, 0, 100, DEFAULT_MODEL.missed_penalty_factor);
+
+    const cw = {};
+    for(const key of Object.keys(DEFAULT_MODEL.condition_weights)){
+      const v = clampFloat(document.getElementById(`cw_${key}`)?.value, -9999, 9999, DEFAULT_MODEL.condition_weights[key]);
+      cw[key] = v;
+    }
+
+    MODEL = {
+      age_factor: af,
+      max_age: ma,
+      severity_factor: sf,
+      missed_penalty_factor: mp,
+      condition_weights: cw
+    };
+
+    saveModel();
+    renderPatients();
+    renderDashboard();
+    toast("Kaydedildi", "Skor modeli güncellendi.", "ok", 2200);
+  }
+
+  function resetWeights(){
+    MODEL = structuredClone(DEFAULT_MODEL);
+    saveModel();
+    renderModelUI();
+    renderPatients();
+    renderDashboard();
+    toast("Sıfırlandı", "Varsayılan skor modeli geri yüklendi.", "warn", 2200);
+  }
+
+  /* ---------- Init defaults ---------- */
+  function todayISO(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  async function wipeLocal(){
+    const ok = await confirmModal(
+      "LocalStorage Sıfırla",
+      `Tarayıcıdaki tüm kayıtlar temizlenecek:<br><br>
+       <span class="pill">Hastalar</span>
+       <span class="pill">Slot</span>
+       <span class="pill">Son Plan</span>
+       <span class="pill">Tema</span>
+       <span class="pill">Sidebar</span>
+       <span class="pill">Model</span>
+       <span class="pill">Profil/Avatar</span>
+       <br><br><span class="bad">Geri alınamaz.</span>`,
+      "Sıfırla",
+      "Vazgeç",
+      true
+    );
+    if(!ok) return;
+
+    try{
+      localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(LS_SLOT_KEY);
+      localStorage.removeItem(LS_LAST_RESULTS_KEY);
+      localStorage.removeItem(LS_THEME_KEY);
+      localStorage.removeItem(LS_VIEW_KEY);
+      localStorage.removeItem(LS_SIDEBAR_KEY);
+      localStorage.removeItem(LS_MODEL_KEY);
+      localStorage.removeItem(LS_USER_OVERRIDE_KEY);
+      localStorage.removeItem(LS_AVATAR_OVERRIDE_KEY);
+    }catch(e){}
+
+    // runtime state reset
+    patients = [];
+    lastSchedule = null;
+    editIndex = null;
+    globalQuery = "";
+    MODEL = structuredClone(DEFAULT_MODEL);
+
+    // reset UI
+    try{
+      document.getElementById("globalSearch").value = "";
+      document.getElementById("q").value = "";
+      document.getElementById("minScore").value = 0;
+      document.getElementById("onlyBadMissed").checked = false;
+    }catch(e){}
+
+    // apply defaults
+    applyTheme("dark");
+    applySidebarState(false);
+
+    // slot defaults: set today
+    const sd = document.getElementById("slotDate");
+    if(sd) sd.value = todayISO();
+    const st = document.getElementById("slotTime");
+    if(st) st.value = "09:00";
+    const du = document.getElementById("slotDuration");
+    if(du) du.value = 20;
+    const sc = document.getElementById("slotCount");
+    if(sc) sc.value = 12;
+    saveSlotSettings();
+
+    clearResults();
+    exitEditMode();
+    clearForm();
+    renderPatients();
+    renderDashboard();
+    renderModelUI();
+    syncSlotToSettingsUI();
+    syncProfileToSettingsUI();
+    syncAvatarToSettingsUI();
+
+    toast("Sıfırlandı", "LocalStorage temizlendi. Varsayılanlara döndü.", "ok", 2400);
+    showView("dashboard");
+  }
+
+  function init(){
+    // theme
+    const savedTheme = (() => { try{ return localStorage.getItem(LS_THEME_KEY); }catch(e){ return null; } })();
+    applyTheme(savedTheme || "dark");
+
+    // sidebar state
+    const savedSide = (() => { try{ return localStorage.getItem(LS_SIDEBAR_KEY); }catch(e){ return null; } })();
+    applySidebarState(savedSide === "1");
+
+    // model
+    loadModel();
+
+    // patients
+    loadPatients();
+
+    // slot settings
+    const hadSlot = loadSlotSettings();
+    if(!hadSlot){
+      // default slot: today + 09:00
+      const sd = document.getElementById("slotDate");
+      if(sd) sd.value = todayISO();
+      saveSlotSettings();
+    }else{
+      // if loaded but empty date, still set today to avoid “plan çalışmaz” trap
+      const sd = document.getElementById("slotDate");
+      if(sd && !String(sd.value || "").trim()){
+        sd.value = todayISO();
+        saveSlotSettings();
+      }
+    }
+
+    // last plan
+    loadLastSchedule();
+    if(lastSchedule && Array.isArray(lastSchedule.results) && lastSchedule.results.length){
+      renderResults(lastSchedule.results);
+    }
+
+    // initial renders
+    renderPatients();
+    renderDashboard();
+
+    // initial view
+    const savedView = (() => { try{ return localStorage.getItem(LS_VIEW_KEY); }catch(e){ return null; } })();
+    showView(savedView || "dashboard");
+
+    // sync settings panels
+    syncSlotToSettingsUI();
+    renderModelUI();
+
+    // auth user
+    loadMe();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>

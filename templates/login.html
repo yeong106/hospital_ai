@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Giriş • Hastane AI</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.12);
+      --txt:#eaf0ff;
+      --muted: rgba(234,240,255,.70);
+      --r:18px;
+
+      --p1:#7c4dff;
+      --p2:#4f46e5;
+
+      --inputBg: rgba(0,0,0,.22);
+      --toastBg: rgba(10, 15, 28, .78);
+    }
+    html[data-theme="light"]{
+      --bg:#f6f7fb;
+      --card: rgba(255,255,255,.90);
+      --line: rgba(15,23,42,.10);
+      --txt:#0f172a;
+      --muted: rgba(15,23,42,.62);
+
+      --inputBg: rgba(15,23,42,.06);
+      --toastBg: rgba(255,255,255,.92);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(124,77,255,.35), transparent 60%),
+        radial-gradient(900px 600px at 85% 20%, rgba(34,197,94,.18), transparent 55%),
+        var(--bg);
+      color:var(--txt);
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .wrap{ width:min(520px, 100%); display:grid; gap:14px; }
+    .top{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border-radius: var(--r);
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+    }
+    .brand{ display:grid; gap:2px; }
+    .title{ font-size:16px; font-weight:900; letter-spacing:.2px; }
+    .sub{ font-size:12px; color:var(--muted); }
+
+    .card{
+      border:1px solid var(--line);
+      background: var(--card);
+      border-radius: var(--r);
+      padding:16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.22);
+    }
+
+    label{ display:block; color:var(--muted); font-size:12px; margin:10px 0 6px; }
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: var(--inputBg);
+      color: var(--txt);
+      outline:none;
+    }
+    html[data-theme="light"] input{ border-color: rgba(15,23,42,.12); }
+    input::placeholder{ color: rgba(234,240,255,.35) }
+    html[data-theme="light"] input::placeholder{ color: rgba(15,23,42,.35) }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      border:0; cursor:pointer;
+      padding:12px 14px;
+      border-radius: 14px;
+      font-weight:800;
+      color:white;
+      background: linear-gradient(135deg, var(--p1), var(--p2));
+      box-shadow: 0 12px 28px rgba(124,77,255,.25);
+      white-space:nowrap;
+    }
+    button.secondary{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
+      color: var(--txt);
+    }
+    html[data-theme="light"] button.secondary{
+      background: rgba(15,23,42,.06);
+      border-color: rgba(15,23,42,.10);
+    }
+
+    .link{
+      color: var(--txt);
+      text-decoration:none;
+      font-weight:800;
+    }
+    .link:hover{ text-decoration:underline; }
+
+    .themeBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      padding:8px 10px;
+      border-radius: 12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    html[data-theme="light"] .themeBtn{
+      background: rgba(15,23,42,.06);
+      border-color: rgba(15,23,42,.10);
+    }
+
+    /* Toast */
+    #toastHost{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      gap: 10px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: auto;
+      min-width: 240px;
+      max-width: 360px;
+      border:1px solid rgba(255,255,255,.16);
+      background: var(--toastBg);
+      backdrop-filter: blur(10px);
+      color: var(--txt);
+      border-radius: 16px;
+      padding: 12px 12px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.25);
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all .18s ease;
+    }
+    html[data-theme="light"] .toast{ border-color: rgba(15,23,42,.12); }
+    .toast.show{ transform: translateY(0); opacity: 1; }
+    .toast .trow{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .toast .tmeta{ font-size:12px; color: var(--muted); margin-top:4px; }
+    .toast .x{ border:0; background: transparent; color: var(--muted); font-weight:900; cursor:pointer; padding:0 4px; }
+    .toast.bad{ border-color: rgba(239,68,68,.35); }
+    .toast.ok{ border-color: rgba(34,197,94,.35); }
+    .toast.warn{ border-color: rgba(245,158,11,.35); }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="title">Hastane AI • Giriş</div>
+        <div class="sub">Randevu önceliklendirme paneline giriş yap</div>
+      </div>
+      <button class="themeBtn" onclick="toggleTheme()" title="Tema değiştir">🌓</button>
+    </div>
+
+    <div class="card">
+      <label>E-posta</label>
+      <input id="email" placeholder="ör: mehmet@gmail.com" autocomplete="email" />
+
+      <label>Şifre</label>
+      <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+      <div class="row">
+        <button onclick="login()">Giriş Yap</button>
+        <button class="secondary" onclick="goRegister()">Kayıt Ol</button>
+      </div>
+
+      <div class="sub" style="margin-top:12px">
+        Hesabın yok mu? <a class="link" href="/register">Kayıt sayfasına geç</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function toast(title, meta, type="ok", ttl=2200){
+      const host = document.getElementById('toastHost');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `
+        <div class="trow">
+          <div>
+            <div style="font-weight:900">${escapeHtml(title)}</div>
+            ${meta ? `<div class="tmeta">${escapeHtml(meta)}</div>` : ``}
+          </div>
+          <button class="x" title="Kapat">×</button>
+        </div>
+      `;
+      host.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      const kill = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 180); };
+      el.querySelector('.x').addEventListener('click', kill);
+      setTimeout(kill, ttl);
+    }
+
+    function setTheme(theme){
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    }
+    function toggleTheme(){
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      setTheme(cur === "dark" ? "light" : "dark");
+    }
+    (function initTheme(){
+      const saved = localStorage.getItem("theme");
+      if(saved === "light" || saved === "dark") setTheme(saved);
+    })();
+
+    function goRegister(){ location.href = "/register"; }
+
+    async function login(){
+      const email = (document.getElementById("email").value || "").trim().toLowerCase();
+      const password = (document.getElementById("password").value || "");
+
+      if(!email){ toast("E-posta gerekli", "Lütfen e-postanı yaz.", "warn"); return; }
+      if(!password){ toast("Şifre gerekli", "Lütfen şifreni yaz.", "warn"); return; }
+
+      try{
+        const res = await fetch("/api/auth/login", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json().catch(()=> ({}));
+
+        if(!res.ok){
+          toast("Giriş başarısız", data.error || "Bilgiler hatalı.", "bad", 2600);
+          return;
+        }
+
+        toast("Giriş başarılı", "Panele yönlendiriliyorsun…", "ok", 1800);
+        setTimeout(()=> location.href = "/", 450);
+      }catch(e){
+        toast("Sunucuya ulaşılamadı", "Flask çalışıyor mu? (127.0.0.1:5000)", "bad", 2800);
+      }
+    }
+
+    // Enter ile giriş
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") login();
+    });
+  </script>
+</body>
+</html>
